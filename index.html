@@ -285,30 +285,6 @@
   .empty h3 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--muted); margin-bottom: 8px; }
   .empty p { font-size: 12px; }
 
-  /* ── SETUP BANNER ───────────────────────── */
-  .setup-banner {
-    background: #1A2A0A;
-    border: 1px solid #3A5A1A;
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin: 24px 24px 0;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
-  .setup-banner .icon { font-size: 20px; flex-shrink: 0; }
-  .setup-banner h4 { font-size: 13px; color: var(--green2); margin-bottom: 4px; }
-  .setup-banner p { font-size: 11px; color: var(--muted); line-height: 1.7; }
-  .setup-banner code {
-    background: #0A1205; border: 1px solid var(--border);
-    border-radius: 4px; padding: 1px 6px;
-    font-family: inherit; font-size: 11px; color: var(--amber);
-  }
-  .setup-banner .close-btn {
-    margin-left: auto; background: none; border: none;
-    color: var(--dim); cursor: pointer; font-size: 16px; flex-shrink: 0;
-  }
-
   /* ── FOOTER ─────────────────────────────── */
   footer {
     border-top: 1px solid var(--border);
@@ -375,22 +351,6 @@
 </style>
 </head>
 <body>
-
-<!-- ── SETUP BANNER ─────────────────────── -->
-<div class="setup-banner" id="setupBanner">
-  <div class="icon">📋</div>
-  <div>
-    <h4>Connect your Google Sheet to go live</h4>
-    <p>
-      Right now the page uses <strong>sample data</strong> built in. To use your own Sheet:<br>
-      1. Make your Google Sheet <strong>public</strong> (Share → Anyone with the link → Viewer)<br>
-      2. Get the Sheet ID from the URL: <code>docs.google.com/spreadsheets/d/<strong>SHEET_ID</strong>/edit</code><br>
-      3. Open <code>index.html</code>, find <code>SHEET_ID</code> near the top, and paste yours in<br>
-      4. Save and re-deploy to Vercel — done ✓
-    </p>
-  </div>
-  <button class="close-btn" onclick="document.getElementById('setupBanner').style.display='none'">×</button>
-</div>
 
 <!-- ── HEADER ──────────────────────────── -->
 <header>
@@ -461,19 +421,8 @@
 <script>
 // ═══════════════════════════════════════════════════════
 // CONFIGURATION
-// ─────────────────────────────────────────────────────
-// To connect your Google Sheet:
-// 1. Publish your Sheet: File → Share → Anyone with link → Viewer
-// 2. Replace SHEET_ID below with your actual Sheet ID
-// 3. Make sure your Sheet has these exact column headers in Row 1:
-//    id | name | legal_name | province | city | region | type |
-//    lat | lng | address | postal | phone | website |
-//    instagram | facebook | untappd |
-//    taproom | patio | kitchen | pet | tours | accessible |
-//    styles | founded | ocb_member | verified | status | notes
 // ═══════════════════════════════════════════════════════
 const SHEET_ID = '1071nhgKo4kStR5KkikpWEq8LKKDnMqE7FOhp3wZv9dw';
-const USE_SHEET = SHEET_ID !== 'YOUR_SHEET_ID_HERE';
 
 // Province colors
 const PROV_COLORS = {
@@ -483,171 +432,95 @@ const PROV_COLORS = {
 };
 
 // ─────────────────────────────────────────────────────
-// SAMPLE DATA (used until you connect your Sheet)
-// Each object = one row in your Google Sheet
+// SAMPLE DATA — shown if Sheet fails to load
 // ─────────────────────────────────────────────────────
 const SAMPLE_DATA = [
   {
     id:'b001', name:'Collective Arts Brewing', legal_name:'Collective Arts Brewing Co.',
     province:'ON', city:'Hamilton', region:'Niagara & Hamilton', type:'micro',
-    lat:43.2664, lng:-79.8370,
-    address:'207 Burlington St E', postal:'L8L 4H2',
+    lat:43.2664, lng:-79.8370, address:'207 Burlington St E', postal:'L8L 4H2',
     phone:'905-528-8017', website:'https://collectiveartsbrewing.com',
     instagram:'@collectiveartsbrewing', facebook:'collectivearts', untappd:'collectiveartsbrewing',
     taproom:true, patio:true, kitchen:true, pet:true, tours:true, accessible:true,
-    styles:'IPA, Lager, Sour, Stout, Pale Ale',
-    founded:2013, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:'Known for artist-designed can labels.'
+    styles:'IPA, Lager, Sour, Stout, Pale Ale', founded:2013, ocb_member:true,
+    status:'active', verified_date:'2025-01-15', notes:'Known for artist-designed can labels.'
   },
   {
     id:'b002', name:'Bellwoods Brewery', legal_name:'Bellwoods Brewery Inc.',
     province:'ON', city:'Toronto', region:'Greater Toronto Area', type:'micro',
-    lat:43.6480, lng:-79.4220,
-    address:'124 Ossington Ave', postal:'M6J 2Z5',
+    lat:43.6480, lng:-79.4220, address:'124 Ossington Ave', postal:'M6J 2Z5',
     phone:'416-535-4586', website:'https://bellwoodsbrewery.com',
     instagram:'@bellwoodsbrewery', facebook:'bellwoodsbrewery', untappd:'bellwoods_brewery',
     taproom:true, patio:true, kitchen:true, pet:false, tours:false, accessible:false,
-    styles:'Wild Ale, Sour, IPA, Stout, Farmhouse',
-    founded:2012, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:'Famous for wild and mixed-fermentation ales.'
+    styles:'Wild Ale, Sour, IPA, Stout, Farmhouse', founded:2012, ocb_member:true,
+    status:'active', verified_date:'2025-01-15', notes:'Famous for wild and mixed-fermentation ales.'
   },
   {
-    id:'b003', name:'Nickel Brook Brewing', legal_name:'Nickel Brook Brewing Co.',
-    province:'ON', city:'Burlington', region:'Niagara & Hamilton', type:'micro',
-    lat:43.3255, lng:-79.7990,
-    address:'6 Bronte St S', postal:'L7R 2G4',
-    phone:'905-681-2739', website:'https://nickelbrook.com',
-    instagram:'@nickelbrookbrewing', facebook:'nickelbrook', untappd:'nickel_brook_brewing',
-    taproom:true, patio:true, kitchen:false, pet:true, tours:true, accessible:true,
-    styles:'Lager, IPA, Wheat, Barrel-Aged',
-    founded:2005, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:''
-  },
-  {
-    id:'b004', name:"Collective Arts Brewing", legal_name:'BC Craft Brewers Guild Member',
-    province:'BC', city:'Vancouver', region:'Greater Vancouver', type:'micro',
-    lat:49.2827, lng:-123.1207,
-    address:'1 Craft Beer Way', postal:'V5K 0A1',
-    phone:'604-555-0100', website:'https://bccraftbeer.com',
-    instagram:'@bccraftbeer', facebook:'bccraftbeer', untappd:'',
-    taproom:true, patio:true, kitchen:true, pet:false, tours:true, accessible:true,
-    styles:'IPA, Lager, Pale Ale, Sour',
-    founded:2015, ocb_member:false, verified:'2025-01-15', status:'active',
-    notes:'Sample BC brewery entry.'
-  },
-  {
-    id:'b005', name:'Beau\'s All Natural Brewing', legal_name:"Beau's All Natural Brewing Company",
+    id:'b003', name:"Beau's All Natural Brewing", legal_name:"Beau's All Natural Brewing Company",
     province:'ON', city:'Vankleek Hill', region:'Eastern Ontario & Cottage Country', type:'regional',
-    lat:45.5217, lng:-74.6570,
-    address:'10 Terry Fox Dr', postal:'K0B 1R0',
+    lat:45.5217, lng:-74.6570, address:'10 Terry Fox Dr', postal:'K0B 1R0',
     phone:'866-585-2337', website:'https://beaus.ca',
     instagram:'@beausbeer', facebook:'beausbeer', untappd:'beaus_all_natural',
     taproom:true, patio:true, kitchen:true, pet:true, tours:true, accessible:true,
-    styles:'Lager, IPA, Wit, Seasonal',
-    founded:2006, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:'Famous for Oktoberfest festival. Employee-owned.'
+    styles:'Lager, IPA, Wit, Seasonal', founded:2006, ocb_member:true,
+    status:'active', verified_date:'2025-01-15', notes:'Famous for Oktoberfest. Employee-owned.'
   },
   {
-    id:'b006', name:'Sawdust City Brewing', legal_name:'Sawdust City Brewing Company',
-    province:'ON', city:'Gravenhurst', region:'Central & Muskoka', type:'micro',
-    lat:44.9224, lng:-79.3659,
-    address:'255 Winewood Ave E', postal:'P1P 1Z6',
-    phone:'705-687-2337', website:'https://sawdustcitybrewing.com',
-    instagram:'@sawdustcitybrewing', facebook:'sawdustcitybrewing', untappd:'sawdust_city_brewing',
-    taproom:true, patio:true, kitchen:false, pet:true, tours:false, accessible:false,
-    styles:'Lager, IPA, Pale Ale, Dark Lager',
-    founded:2013, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:'Muskoka cottage country staple.'
-  },
-  {
-    id:'b007', name:'Dominion City Brewing', legal_name:'Dominion City Brewing Co.',
-    province:'ON', city:'Ottawa', region:'Southeast Ontario', type:'micro',
-    lat:45.4419, lng:-75.5963,
-    address:'5510 Canotek Rd #5', postal:'K1J 9J3',
-    phone:'613-244-2337', website:'https://dominioncitybrewing.com',
-    instagram:'@dominioncitybeer', facebook:'dominioncitybrewing', untappd:'dominion_city_brewing',
-    taproom:true, patio:false, kitchen:false, pet:false, tours:false, accessible:true,
-    styles:'Saison, IPA, Pale Ale, Stout, Sour',
-    founded:2012, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:''
-  },
-  {
-    id:'b008', name:'Stack Brewing', legal_name:'Stack Brewing Inc.',
-    province:'ON', city:'Sudbury', region:'Northern Ontario', type:'micro',
-    lat:46.4952, lng:-80.9930,
-    address:'340 Pine St', postal:'P3C 1X8',
-    phone:'705-222-2337', website:'https://stackbrewing.com',
-    instagram:'@stackbrewing', facebook:'stackbrewing', untappd:'stack_brewing',
-    taproom:true, patio:true, kitchen:true, pet:false, tours:false, accessible:true,
-    styles:'Lager, IPA, Stout, Wheat',
-    founded:2013, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:'Northern Ontario\'s flagship craft brewery.'
-  },
-  {
-    id:'b009', name:'Waterloo Brewing', legal_name:'Waterloo Brewing Ltd.',
-    province:'ON', city:'Waterloo', region:'Southwest Ontario', type:'regional',
-    lat:43.4812, lng:-80.4985,
-    address:'400 Bingemans Centre Dr', postal:'N2B 3X9',
-    phone:'519-747-2337', website:'https://waterloobrewing.com',
-    instagram:'@waterloobrewing', facebook:'waterloobrewing', untappd:'waterloo_brewing',
-    taproom:true, patio:true, kitchen:false, pet:false, tours:true, accessible:true,
-    styles:'Lager, Dark, Amber, IPA',
-    founded:1984, ocb_member:true, verified:'2025-01-15', status:'active',
-    notes:'Ontario\'s oldest surviving craft brewery.'
-  },
-  {
-    id:'b010', name:'Garrison Brewing', legal_name:'Garrison Brewing Company',
+    id:'b004', name:'Garrison Brewing', legal_name:'Garrison Brewing Company',
     province:'NS', city:'Halifax', region:'Halifax Regional Municipality', type:'micro',
-    lat:44.6488, lng:-63.5752,
-    address:'1149 Marginal Rd', postal:'B3H 4P7',
+    lat:44.6488, lng:-63.5752, address:'1149 Marginal Rd', postal:'B3H 4P7',
     phone:'902-453-5343', website:'https://garrisonbrewing.com',
     instagram:'@garrisonbrewing', facebook:'garrisonbrewing', untappd:'garrison_brewing',
     taproom:true, patio:true, kitchen:false, pet:true, tours:true, accessible:true,
-    styles:'IPA, Stout, Wheat, Seasonal, Lager',
-    founded:1997, ocb_member:false, verified:'2025-01-15', status:'active',
-    notes:'Halifax waterfront. One of Atlantic Canada\'s largest craft breweries.'
+    styles:'IPA, Stout, Wheat, Seasonal, Lager', founded:1997, ocb_member:false,
+    status:'active', verified_date:'2025-01-15', notes:'Halifax waterfront. One of Atlantic Canada\'s largest.'
   },
 ];
 
 // ─────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────
-let allBreweries = [];
+let allBreweries = [];   // only ever holds status='active' rows
 let activeFeats  = new Set();
 
 // ─────────────────────────────────────────────────────
-// INIT
+// INIT — load Sheet, filter to active only
 // ─────────────────────────────────────────────────────
 async function init() {
-  if (USE_SHEET) {
-    try {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-      const res  = await fetch(url);
-      const text = await res.text();
-      const json = JSON.parse(text.substring(47).slice(0, -2));
-      const cols = json.table.cols.map(c => c.label.toLowerCase().trim());
-      allBreweries = json.table.rows.map(row => {
-        const obj = {};
-        cols.forEach((col, i) => {
-          const cell = row.c[i];
-          obj[col] = cell ? (cell.v !== null ? cell.v : '') : '';
-        });
-        // Coerce booleans
-        ['taproom','patio','kitchen','pet','tours','accessible','ocb_member'].forEach(k => {
-          obj[k] = obj[k] === true || obj[k] === 'TRUE' || obj[k] === 'true' || obj[k] === 1;
-        });
-        obj.lat = parseFloat(obj.lat) || 0;
-        obj.lng = parseFloat(obj.lng) || 0;
-        return obj;
-      }).filter(b => b.name && b.status !== 'closed');
-      document.getElementById('setupBanner').style.display = 'none';
-    } catch(e) {
-      console.warn('Sheet load failed, falling back to sample data:', e);
-      allBreweries = SAMPLE_DATA;
-    }
-  } else {
+  try {
+    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Breweries`;
+    const res  = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+    const cols = json.table.cols.map(c => c.label.toLowerCase().trim());
+
+    const rows = json.table.rows.map(row => {
+      const obj = {};
+      cols.forEach((col, i) => {
+        const cell = row.c[i];
+        obj[col] = cell ? (cell.v !== null ? cell.v : '') : '';
+      });
+      // Coerce booleans from Sheet (TRUE/FALSE strings or real booleans)
+      ['taproom','patio','kitchen','pet','tours','accessible','ocb_member'].forEach(k => {
+        obj[k] = obj[k] === true || obj[k] === 'TRUE' || obj[k] === 'true' || obj[k] === 1;
+      });
+      obj.lat = parseFloat(obj.lat) || 0;
+      obj.lng = parseFloat(obj.lng) || 0;
+      return obj;
+    });
+
+    // ── ACTIVE FILTER ──────────────────────────────────
+    // Only show rows the Auditor has stamped 'active'.
+    // 'pending' and 'needs_review' rows are never shown publicly.
+    allBreweries = rows.filter(b => b.name && b.status === 'active');
+
+    console.log(`Loaded ${rows.length} total rows, ${allBreweries.length} active.`);
+
+  } catch(e) {
+    console.warn('Sheet load failed — using sample data:', e);
     allBreweries = SAMPLE_DATA;
   }
+
   updateStats();
   render();
 }
@@ -832,7 +705,7 @@ function openModal(id) {
     <div class="verified-row">
       <span><span class="status-dot"></span>${b.status || 'active'}</span>
       <span>ID: ${b.id}</span>
-      <span>Verified: ${b.verified || 'pending'}</span>
+      <span>Verified: ${b.verified_date || b.verified || 'pending'}</span>
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
@@ -849,6 +722,7 @@ function closeModal(e) {
 // STATS
 // ─────────────────────────────────────────────────────
 function updateStats() {
+  // allBreweries only contains active rows — counts are always accurate
   document.getElementById('statTotal').textContent    = allBreweries.length;
   document.getElementById('statShowing').textContent  = allBreweries.length;
   document.getElementById('countDisplay').textContent = allBreweries.length;

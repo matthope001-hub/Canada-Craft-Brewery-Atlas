@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Canada Craft Brewery Atlas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
   /* ── TOKENS ─────────────────────────────── */
@@ -1292,13 +1293,17 @@ function getFiltered() {
   });
 }
 
-function filterBreweries() { render(); }
+function filterBreweries() {
+  render();
+  if (currentView === 'map') renderMap();
+}
 
 function toggleFeat(btn) {
   const f = btn.dataset.feat;
   activeFeats.has(f) ? activeFeats.delete(f) : activeFeats.add(f);
   btn.classList.toggle('active');
   render();
+  if (currentView === 'map') renderMap();
 }
 
 // ─────────────────────────────────────────────────────
@@ -1579,12 +1584,8 @@ function renderMap() {
   }
 }
 
-// Override render to also update map if in map view
-const _origRender = window.render || render;
-function render() {
-  _origRender();
-  if (currentView === 'map') renderMap();
-}
+// When map is active, renderMap() is called directly from setView() and filterBreweries()
+// No render override needed — this was causing infinite recursion
 
 // ═══════════════════════════════════════════════════════
 // ROUTE PLANNER

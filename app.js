@@ -632,3 +632,13 @@ function renderRating(b) {
     <span style="color:var(--dim);font-weight:400">Untappd</span>
   </div>`;
 }
+
+// ── START ──────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+});
+
+init();

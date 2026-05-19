@@ -285,7 +285,12 @@ function render() {
     return;
   }
 
-  grid.innerHTML = filtered.map((b, i) => {
+  // Limit to 120 cards for performance — search/filter to narrow results
+  const PAGE = 120;
+  const visible = filtered.slice(0, PAGE);
+  const overflow = filtered.length > PAGE;
+
+  grid.innerHTML = visible.map((b, i) => {
     const color    = PROV_COLORS[b.province] || '#78BE20';
     const styleArr = typeof b.styles === 'string' ? b.styles.split(',').map(s=>s.trim()).filter(Boolean) : [];
     const feats    = [
@@ -299,7 +304,7 @@ function render() {
     const mapsUrl   = `https://maps.google.com/?q=${b.lat},${b.lng}`;
     const isVisited = visitedSet.has(b.id);
     return `
-    <div class="card ${isVisited ? 'visited' : ''}" style="--province-color:${color}; animation-delay:${i*25}ms"
+    <div class="card ${isVisited ? 'visited' : ''}" style="--province-color:${color}"
          onclick="openModal('${b.id}')">
       <div class="card-header">
         <div style="display:flex;gap:7px;align-items:center">
@@ -311,6 +316,7 @@ function render() {
       <div class="card-name">${b.name}</div>
       <div class="card-city">${b.city}${b.founded ? ' · Est. '+b.founded : ''}</div>
       ${renderRating(b)}
+      <div class="styles">
         ${styleArr.slice(0,4).map(s=>`<span class="style-tag">${s}</span>`).join('')}
         ${styleArr.length>4?`<span class="style-tag">+${styleArr.length-4}</span>`:''}
       </div>
@@ -323,7 +329,7 @@ function render() {
         ${b.website ? `<a class="btn-web" href="${b.website}" target="_blank" onclick="event.stopPropagation()">Web ↗</a>` : ''}
       </div>
     </div>`;
-  }).join('');
+  }).join('') + (overflow ? `<div class="empty" style="grid-column:1/-1;padding:24px;text-align:center"><p style="color:var(--muted);font-size:12px">Showing first ${PAGE} of ${filtered.length} breweries — search or filter to narrow results</p></div>` : '');
 }
 
 // ─────────────────────────────────────────────────────

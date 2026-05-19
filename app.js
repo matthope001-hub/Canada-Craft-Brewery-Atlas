@@ -92,7 +92,7 @@ const SAMPLE_DATA = [
     province:'ON', city:'Hamilton', region:'Niagara & Hamilton', type:'micro',
     lat:43.2664, lng:-79.8370, address:'207 Burlington St E', postal:'L8L 4H2',
     phone:'905-528-8017', website:'https://collectiveartsbrewing.com',
-    instagram:'@collectiveartsbrewing', facebook:'collectivearts', untappd:'collectiveartsbrewing',
+    instagram:'@collectiveartsbrewing', facebook:'collectivearts',
     taproom:true, patio:true, kitchen:true, pet:true, tours:true, accessible:true,
     styles:'IPA, Lager, Sour, Stout, Pale Ale', founded:2013, ocb_member:true,
     status:'active', verified_date:'2025-01-15', notes:'Known for artist-designed can labels.'
@@ -102,7 +102,7 @@ const SAMPLE_DATA = [
     province:'ON', city:'Toronto', region:'Greater Toronto Area', type:'micro',
     lat:43.6480, lng:-79.4220, address:'124 Ossington Ave', postal:'M6J 2Z5',
     phone:'416-535-4586', website:'https://bellwoodsbrewery.com',
-    instagram:'@bellwoodsbrewery', facebook:'bellwoodsbrewery', untappd:'bellwoods_brewery',
+    instagram:'@bellwoodsbrewery', facebook:'bellwoodsbrewery',
     taproom:true, patio:true, kitchen:true, pet:false, tours:false, accessible:false,
     styles:'Wild Ale, Sour, IPA, Stout, Farmhouse', founded:2012, ocb_member:true,
     status:'active', verified_date:'2025-01-15', notes:'Famous for wild and mixed-fermentation ales.'
@@ -112,7 +112,7 @@ const SAMPLE_DATA = [
     province:'ON', city:'Vankleek Hill', region:'Eastern Ontario & Cottage Country', type:'regional',
     lat:45.5217, lng:-74.6570, address:'10 Terry Fox Dr', postal:'K0B 1R0',
     phone:'866-585-2337', website:'https://beaus.ca',
-    instagram:'@beausbeer', facebook:'beausbeer', untappd:'beaus_all_natural',
+    instagram:'@beausbeer', facebook:'beausbeer',
     taproom:true, patio:true, kitchen:true, pet:true, tours:true, accessible:true,
     styles:'Lager, IPA, Wit, Seasonal', founded:2006, ocb_member:true,
     status:'active', verified_date:'2025-01-15', notes:'Famous for Oktoberfest. Employee-owned.'
@@ -122,7 +122,7 @@ const SAMPLE_DATA = [
     province:'NS', city:'Halifax', region:'Halifax Regional Municipality', type:'micro',
     lat:44.6488, lng:-63.5752, address:'1149 Marginal Rd', postal:'B3H 4P7',
     phone:'902-453-5343', website:'https://garrisonbrewing.com',
-    instagram:'@garrisonbrewing', facebook:'garrisonbrewing', untappd:'garrison_brewing',
+    instagram:'@garrisonbrewing', facebook:'garrisonbrewing',
     taproom:true, patio:true, kitchen:false, pet:true, tours:true, accessible:true,
     styles:'IPA, Stout, Wheat, Seasonal, Lager', founded:1997, ocb_member:false,
     status:'active', verified_date:'2025-01-15', notes:'Halifax waterfront. One of Atlantic Canada\'s largest.'
@@ -408,7 +408,6 @@ function openModal(id) {
         ${b.website   ? `<a class="social-link" href="${b.website}" target="_blank">🌐 Website</a>` : ''}
         ${b.jeep_post ? `<a class="social-link" href="${b.jeep_post}" target="_blank" style="background:#EDF7D8;border-color:#C5E89A">🚙 Our Visit</a>` : ''}
         ${b.instagram ? `<a class="social-link" href="https://instagram.com/${b.instagram.replace('@','')}" target="_blank">📸 Instagram</a>` : ''}
-        ${b.untappd   ? `<a class="social-link" href="https://untappd.com/brewery/${b.untappd}" target="_blank">🍺 Untappd</a>` : ''}
         ${b.facebook  ? `<span class="social-link">Facebook: ${b.facebook}</span>` : ''}
       </div>
     </div>

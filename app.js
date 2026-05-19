@@ -149,7 +149,10 @@ async function init() {
       const obj = {};
       cols.forEach((col, i) => {
         const cell = row.c && row.c[i];
-        obj[col] = cell && cell.v !== null && cell.v !== undefined ? cell.v : '';
+        if (!cell || cell.v === null || cell.v === undefined) { obj[col] = ''; return; }
+        // Use formatted value for dates (cell.f), raw value otherwise
+        const isDate = typeof cell.v === 'string' && cell.v.startsWith('Date(');
+        obj[col] = isDate ? (cell.f || '') : cell.v;
       });
       ['taproom','patio','kitchen','pet','tours','accessible','ocb_member'].forEach(k => {
         obj[k] = obj[k] === true || obj[k] === 'TRUE' || obj[k] === 'true' || obj[k] === 1;

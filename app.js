@@ -221,7 +221,7 @@ function getFiltered() {
   const q    = document.getElementById('searchInput').value.toLowerCase().trim();
   const prov = document.getElementById('provinceFilter').value;
   const type = document.getElementById('typeFilter').value;
-  return allBreweries.filter(b => {
+  let results = allBreweries.filter(b => {
     if (prov && b.province !== prov) return false;
     if (type && b.type !== type) return false;
     if (activeFeats.has('ocb')        && !b.ocb_member)           return false;
@@ -238,6 +238,20 @@ function getFiltered() {
     }
     return true;
   });
+  // Route sorting — filter to within 100km of route line, sorted in road-trip order
+  if (routeActive && routeLine) {
+    const { from, to } = routeLine;
+    const dx = to.lng - from.lng, dy = to.lat - from.lat;
+    const lenSq = dx*dx + dy*dy;
+    results = results
+      .filter(b => b.lat && b.lng && distToSegment(b.lat, b.lng, from.lat, from.lng, to.lat, to.lng) < 100)
+      .sort((a, b) => {
+        const tA = ((a.lng - from.lng)*dx + (a.lat - from.lat)*dy) / lenSq;
+        const tB = ((b.lng - from.lng)*dx + (b.lat - from.lat)*dy) / lenSq;
+        return tA - tB;
+      });
+  }
+  return results;
 }
 
 function filterBreweries() {
@@ -596,32 +610,7 @@ function clearRoute() {
   render();
 }
 
-// Patch getFiltered to sort by route distance when active
-const _origGetFiltered = getFiltered;
-function getFiltered() {
-  let results = _origGetFiltered();
-  if (routeActive && routeLine) {
-    const { from, to } = routeLine;
-    // Score each brewery by distance to route segment
-    results = results
-      .map(b => ({
-        ...b,
-        _routeDist: b.lat && b.lng
-          ? distToSegment(b.lat, b.lng, from.lat, from.lng, to.lat, to.lng)
-          : 9999
-      }))
-      .filter(b => b._routeDist < 100) // within 100km of route line
-      .sort((a, b) => {
-        // Sort by progress along route first (so breweries appear in road-trip order)
-        const dx = to.lng - from.lng, dy = to.lat - from.lat;
-        const lenSq = dx*dx + dy*dy;
-        const tA = ((a.lng - from.lng)*dx + (a.lat - from.lat)*dy) / lenSq;
-        const tB = ((b.lng - from.lng)*dx + (b.lat - from.lat)*dy) / lenSq;
-        return tA - tB;
-      });
-  }
-  return results;
-}
+// Route sorting is handled inside getFiltered directly — no override needed
 
 // ═══════════════════════════════════════════════════════
 // UNTAPPD RATINGS

@@ -598,6 +598,8 @@
 
   /* ── MAP VIEW ────────────────────────────── */
   #mapView {
+    position: relative;
+    z-index: 1;
     display: none;
     height: calc(100vh - 160px);
     min-height: 500px;
@@ -746,7 +748,7 @@
     position: fixed; inset: 0;
     background: rgba(26,26,24,0.6);
     backdrop-filter: blur(8px);
-    z-index: 200;
+    z-index: 2000;
     display: flex;
     align-items: flex-end;
     justify-content: center;

@@ -148,8 +148,8 @@ async function init() {
     const rows = json.table.rows.map(row => {
       const obj = {};
       cols.forEach((col, i) => {
-        const cell = row.c[i];
-        obj[col] = cell ? (cell.v !== null ? cell.v : '') : '';
+        const cell = row.c && row.c[i];
+        obj[col] = cell && cell.v !== null && cell.v !== undefined ? cell.v : '';
       });
       ['taproom','patio','kitchen','pet','tours','accessible','ocb_member'].forEach(k => {
         obj[k] = obj[k] === true || obj[k] === 'TRUE' || obj[k] === 'true' || obj[k] === 1;
@@ -158,7 +158,7 @@ async function init() {
       obj.lng = parseFloat(obj.lng) || 0;
       return obj;
     });
-    allBreweries = rows.filter(b => b.name && b.status === 'active');
+    allBreweries = rows.filter(b => b.name && (!b.status || b.status === 'active'));
     allBreweries.forEach(b => { if (b.jeep_post) visitedSet.add(b.id); });
   } catch(e) {
     console.warn('Sheet load failed — using sample data:', e);

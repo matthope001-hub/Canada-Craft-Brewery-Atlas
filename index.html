@@ -4,42 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Canada Craft Brewery Atlas</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
   /* ── TOKENS ─────────────────────────────── */
   :root {
-    --bg:       #0C0F0A;
-    --surface:  #141810;
-    --card:     #1A1F16;
-    --border:   #252C20;
-    --border2:  #2E3828;
-    --amber:    #D4922A;
-    --amber2:   #F0B84A;
-    --green:    #4A8C3F;
-    --green2:   #6AB05E;
-    --text:     #E8E4DC;
-    --muted:    #7A8070;
-    --dim:      #4A5040;
-    --hops:     url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1.5' fill='%23252C20'/%3E%3C/svg%3E");
+    --gecko:    #78BE20;
+    --gecko2:   #5fa012;
+    --gecko3:   #a8e050;
+    --bg:       #F5F2EC;
+    --surface:  #FFFFFF;
+    --card:     #FFFFFF;
+    --border:   #E0DDD5;
+    --border2:  #C8C4BA;
+    --ink:      #1A1A18;
+    --muted:    #6B6860;
+    --dim:      #A8A49C;
+    --tread:    url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='8' height='4' rx='1' fill='%23E0DDD5'/%3E%3Crect x='12' y='0' width='8' height='4' rx='1' fill='%23E0DDD5'/%3E%3Crect x='4' y='8' width='8' height='4' rx='1' fill='%23E0DDD5'/%3E%3Crect x='16' y='8' width='8' height='4' rx='1' fill='%23E0DDD5'/%3E%3C/svg%3E");
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'DM Mono', monospace;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background: var(--bg);
-    background-image: var(--hops);
-    color: var(--text);
+    background-image: var(--tread);
+    color: var(--ink);
     min-height: 100vh;
     line-height: 1.6;
   }
 
   /* ── HEADER ─────────────────────────────── */
   header {
-    background: linear-gradient(180deg, #0A0D08 0%, var(--surface) 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 40px 24px 32px;
+    background: var(--ink);
+    padding: 0 24px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -48,56 +45,116 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse 80% 60% at 50% -10%, #D4922A18 0%, transparent 70%);
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 60px,
+      rgba(120,190,32,0.04) 60px,
+      rgba(120,190,32,0.04) 61px
+    );
     pointer-events: none;
   }
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 0 40px;
+    position: relative;
+  }
   .eyebrow {
-    font-size: 10px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
     letter-spacing: 0.2em;
-    color: var(--amber);
+    color: var(--gecko);
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: '';
+    height: 1px;
+    width: 40px;
+    background: var(--gecko);
+    opacity: 0.5;
   }
   h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(32px, 6vw, 64px);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: clamp(52px, 10vw, 110px);
     font-weight: 900;
-    color: var(--text);
-    letter-spacing: -0.02em;
-    line-height: 1;
-    margin-bottom: 10px;
+    color: #FFFFFF;
+    letter-spacing: -1px; text-transform: uppercase;
+    line-height: 0.9;
+    margin-bottom: 6px;
   }
-  h1 span { color: var(--amber); }
+  h1 em {
+    color: var(--gecko);
+    font-style: normal;
+  }
   .tagline {
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-    margin-bottom: 32px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.1em;
+    margin-bottom: 36px;
+    text-transform: uppercase;
   }
 
-  /* ── STATS BAR ──────────────────────────── */
+  /* ── STATS ───────────────────────────────── */
   .stats {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    flex-wrap: wrap;
-    margin-bottom: 0;
+    display: inline-flex;
+    gap: 0;
+    border: 1px solid #333;
+    border-radius: 10px;
+    overflow: hidden;
   }
-  .stat { text-align: center; }
+  .stat {
+    padding: 12px 28px;
+    border-right: 1px solid #333;
+    text-align: center;
+  }
+  .stat:last-child { border-right: none; }
   .stat-num {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    color: var(--amber);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    color: var(--gecko);
     display: block;
     line-height: 1;
+    letter-spacing: -1px;
   }
-  .stat-label { font-size: 10px; color: var(--dim); letter-spacing: 0.08em; }
+  .stat-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    color: #666;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── JEEP BADGE ──────────────────────────── */
+  .jeep-strip {
+    background: var(--gecko);
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .jeep-strip img { flex-shrink: 0; }
 
   /* ── CONTROLS ───────────────────────────── */
   .controls {
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
+    border-bottom: 2px solid var(--border);
+    padding: 14px 24px;
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
@@ -105,6 +162,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   }
   .search-wrap {
     position: relative;
@@ -118,47 +176,48 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--dim);
-    font-size: 16px;
+    font-size: 18px;
     pointer-events: none;
   }
   input[type="search"] {
     width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    padding: 10px 14px 10px 38px;
+    background: var(--bg);
+    border: 1.5px solid var(--border2);
+    color: var(--ink);
+    padding: 10px 14px 10px 40px;
     border-radius: 8px;
-    font-family: inherit;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 13px;
     outline: none;
     transition: border-color 0.15s;
   }
-  input[type="search"]:focus { border-color: var(--amber); }
+  input[type="search"]:focus { border-color: var(--gecko); box-shadow: 0 0 0 3px rgba(120,190,32,0.15); }
   input[type="search"]::placeholder { color: var(--dim); }
 
   select {
-    background: var(--card);
-    border: 1px solid var(--border2);
-    color: var(--text);
+    background: var(--bg);
+    border: 1.5px solid var(--border2);
+    color: var(--ink);
     padding: 10px 14px;
     border-radius: 8px;
-    font-family: inherit;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 12px;
     cursor: pointer;
     outline: none;
     transition: border-color 0.15s;
   }
-  select:focus { border-color: var(--amber); }
+  select:focus { border-color: var(--gecko); }
 
   .result-count {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 11px;
     color: var(--dim);
     white-space: nowrap;
     margin-left: auto;
   }
-  .result-count span { color: var(--amber); }
+  .result-count span { color: var(--gecko2); font-weight: 600; }
 
-  /* ── FEATURE FILTERS ────────────────────── */
+  /* ── FEATURE FILTERS ─────────────────────── */
   .feature-filters {
     background: var(--bg);
     border-bottom: 1px solid var(--border);
@@ -168,20 +227,28 @@
     flex-wrap: wrap;
     align-items: center;
   }
-  .filter-label { font-size: 10px; color: var(--dim); letter-spacing: 0.08em; margin-right: 4px; }
+  .filter-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.08em;
+    margin-right: 4px;
+    text-transform: uppercase;
+  }
   .feat-btn {
-    background: var(--card);
-    border: 1px solid var(--border2);
+    background: var(--surface);
+    border: 1.5px solid var(--border2);
     color: var(--muted);
     padding: 5px 12px;
     border-radius: 20px;
-    font-family: inherit;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 11px;
     cursor: pointer;
     transition: all 0.15s;
+    font-weight: 500;
   }
-  .feat-btn:hover { border-color: var(--amber); color: var(--amber); }
-  .feat-btn.active { background: var(--amber); color: #0C0F0A; border-color: var(--amber); font-weight: 500; }
+  .feat-btn:hover { border-color: var(--gecko); color: var(--gecko2); }
+  .feat-btn.active { background: var(--gecko); color: var(--ink); border-color: var(--gecko); font-weight: 600; }
 
   /* ── GRID ───────────────────────────────── */
   .grid-wrap { padding: 24px; }
@@ -194,87 +261,173 @@
   /* ── BREWERY CARD ───────────────────────── */
   .card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: 12px;
     padding: 20px;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
     overflow: hidden;
-    animation: fadeUp 0.3s ease both;
+    animation: fadeUp 0.35s ease both;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
   .card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--province-color, var(--amber));
-    opacity: 0;
-    transition: opacity 0.2s;
+    height: 3px;
+    background: var(--province-color, var(--gecko));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
   }
-  .card:hover { border-color: var(--border2); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
-  .card:hover::before { opacity: 1; }
+  .card:hover {
+    border-color: var(--gecko);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(120,190,32,0.15), 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .card:hover::before { transform: scaleX(1); }
+
+  /* Visited Jeep badge */
+  .card.visited { border-color: var(--gecko); }
+  .card.visited::after {
+    content: '';
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 28px; height: 28px;
+    background-image: url("data:image/png;base64,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");
+    background-size: contain;
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 0 4px rgba(120,190,32,0.6));
+    pointer-events: none;
+  }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
   .province-dot {
     width: 8px; height: 8px; border-radius: 50%;
-    background: var(--province-color, var(--amber));
-    flex-shrink: 0; margin-top: 5px;
+    background: var(--province-color, var(--gecko));
+    flex-shrink: 0; margin-top: 4px;
   }
-  .card-region { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .card-region {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
   .ocb-badge {
-    font-size: 9px; letter-spacing: 0.06em;
-    background: #1A2E1A; border: 1px solid #2A4A2A;
-    color: var(--green2); border-radius: 12px; padding: 2px 8px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    background: #EDF7D8;
+    border: 1px solid #C5E89A;
+    color: var(--gecko2);
+    border-radius: 12px;
+    padding: 2px 8px;
+    white-space: nowrap;
   }
   .card-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 18px; font-weight: 700;
-    color: var(--text); line-height: 1.2;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.1;
     margin-bottom: 4px;
+    letter-spacing: 0.03em;
   }
-  .card-city { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .card-city {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
 
   .styles { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 14px; }
   .style-tag {
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: 4px; padding: 2px 8px;
-    font-size: 10px; color: var(--dim); letter-spacing: 0.04em;
+    background: #F0EDE8;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    color: var(--muted);
   }
 
   .features { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 16px; }
   .feat-tag {
-    background: #141810; border: 1px solid var(--border);
-    border-radius: 5px; padding: 3px 8px;
-    font-size: 10px; color: var(--muted);
-    display: inline-flex; align-items: center; gap: 4px;
+    background: #F7F9F2;
+    border: 1px solid #DFF0C0;
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 10px;
+    color: var(--gecko2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
   }
 
   .card-footer { display: flex; gap: 8px; align-items: center; }
   .btn-directions {
-    flex: 1; background: var(--amber); color: #0C0F0A;
-    border: none; border-radius: 8px; padding: 9px 0;
-    font-family: inherit; font-size: 11px; font-weight: 500;
-    letter-spacing: 0.06em; cursor: pointer;
-    text-decoration: none; display: block; text-align: center;
+    flex: 1;
+    background: var(--gecko);
+    color: var(--ink);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    text-align: center;
     transition: background 0.15s;
   }
-  .btn-directions:hover { background: var(--amber2); }
+  .btn-directions:hover { background: var(--gecko2); color: #fff; }
   .btn-web {
-    background: var(--surface); border: 1px solid var(--border2);
-    color: var(--muted); border-radius: 8px; padding: 9px 14px;
-    font-family: inherit; font-size: 11px; cursor: pointer;
-    text-decoration: none; display: block;
+    background: var(--bg);
+    border: 1.5px solid var(--border2);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
     transition: all 0.15s;
+    font-weight: 500;
   }
-  .btn-web:hover { border-color: var(--amber); color: var(--amber); }
+  .btn-web:hover { border-color: var(--gecko); color: var(--gecko2); }
+  .btn-visited {
+    background: #F7F9F2;
+    border: 1.5px solid var(--gecko);
+    color: var(--gecko2);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .btn-visited:hover, .btn-visited.marked { background: var(--gecko); color: var(--ink); }
 
-  /* ── EMPTY STATE ────────────────────────── */
+  /* ── EMPTY STATE ─────────────────────────── */
   .empty {
     grid-column: 1/-1;
     text-align: center;
@@ -282,87 +435,497 @@
     color: var(--dim);
   }
   .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
-  .empty h3 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--muted); margin-bottom: 8px; }
+  .empty h3 {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+  }
   .empty p { font-size: 12px; }
 
-  /* ── FOOTER ─────────────────────────────── */
+  /* ── TRAIL DASHBOARD ────────────────────── */
+  .dashboard {
+    background: var(--ink);
+    border-top: 3px solid var(--gecko);
+    border-bottom: 3px solid var(--gecko);
+    padding: 32px 24px;
+    color: #fff;
+  }
+  .dashboard-inner {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .dashboard-heading {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--gecko);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dashboard-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #333;
+  }
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .dash-stat {
+    background: #242420;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .dash-stat-num {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 42px;
+    color: var(--gecko);
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .dash-stat-unit {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--gecko3);
+    margin-left: 3px;
+  }
+  .dash-stat-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+  .dash-trail {
+    background: #242420;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .dash-trail-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .trail-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    align-items: center;
+  }
+  .trail-stop {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .trail-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--gecko);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--ink);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.15s;
+    position: relative;
+  }
+  .trail-dot:hover { transform: scale(1.2); }
+  .trail-dot[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .trail-line {
+    width: 24px; height: 2px;
+    background: repeating-linear-gradient(90deg, var(--gecko) 0, var(--gecko) 4px, transparent 4px, transparent 8px);
+    flex-shrink: 0;
+  }
+  .trail-empty {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    color: #555;
+    font-style: italic;
+  }
+
+  /* ── VIEW TOGGLE ─────────────────────────── */
+  .view-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    border: 1.5px solid var(--border2);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .view-btn {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .view-btn.active { background: var(--gecko); color: var(--ink); }
+
+  /* ── MAP VIEW ────────────────────────────── */
+  #mapView {
+    display: none;
+    height: calc(100vh - 160px);
+    min-height: 500px;
+  }
+  #mapView.active { display: block; }
+  .grid-wrap.hidden { display: none; }
+
+  /* Leaflet popup overrides */
+  .leaflet-popup-content-wrapper {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 10px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .leaflet-popup-tip { background: var(--ink); }
+  .leaflet-popup-content { margin: 12px 14px; }
+  .map-popup-name {
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    margin-bottom: 2px;
+  }
+  .map-popup-city { font-size: 11px; color: #aaa; margin-bottom: 8px; }
+  .map-popup-visited { color: var(--gecko); font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+  .map-popup-btn {
+    display: inline-block;
+    background: var(--gecko);
+    color: var(--ink);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+  }
+
+  /* ── ROUTE PLANNER ───────────────────────── */
+  .route-planner {
+    background: var(--ink);
+    border-bottom: 2px solid var(--gecko);
+    padding: 12px 24px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .route-planner.active { display: flex; }
+  .route-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gecko);
+    white-space: nowrap;
+  }
+  .route-input {
+    background: #2a2a28;
+    border: 1.5px solid #444;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    outline: none;
+    width: 180px;
+    transition: border-color 0.15s;
+  }
+  .route-input:focus { border-color: var(--gecko); }
+  .route-input::placeholder { color: #666; }
+  .route-arrow { color: var(--gecko); font-size: 16px; font-weight: 900; }
+  .route-btn {
+    background: var(--gecko);
+    color: var(--ink);
+    border: none;
+    border-radius: 7px;
+    padding: 8px 16px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .route-btn:hover { background: var(--gecko2); color: #fff; }
+  .route-btn.clear {
+    background: transparent;
+    border: 1.5px solid #444;
+    color: #888;
+  }
+  .route-btn.clear:hover { border-color: #888; color: #fff; }
+  .route-status {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    color: #888;
+    font-style: italic;
+  }
+  .route-km-badge {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: #1a2a10;
+    border: 1px solid var(--gecko);
+    color: var(--gecko);
+    border-radius: 10px;
+    padding: 2px 7px;
+    margin-left: 6px;
+  }
+
+  /* Untappd rating on card */
+  .untappd-rating {
+    font-size: 10px;
+    color: var(--gecko2);
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .untappd-rating .stars { color: #f0c040; letter-spacing: -1px; }
+
+  /* ── FOOTER ──────────────────────────────── */
   footer {
-    border-top: 1px solid var(--border);
+    background: var(--ink);
+    border-top: 3px solid var(--gecko);
     padding: 24px;
     text-align: center;
-    font-size: 11px;
-    color: var(--dim);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    color: #666;
+    letter-spacing: 0.06em;
   }
-  footer a { color: var(--amber); text-decoration: none; }
+  footer a { color: var(--gecko); text-decoration: none; }
 
-  /* ── DETAIL MODAL ───────────────────────── */
+  /* ── DETAIL MODAL ────────────────────────── */
   .modal-overlay {
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.75);
-    backdrop-filter: blur(6px);
+    background: rgba(26,26,24,0.6);
+    backdrop-filter: blur(8px);
     z-index: 200;
-    display: flex; align-items: flex-end; justify-content: center;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
     padding: 0;
-    opacity: 0; pointer-events: none;
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 0.2s;
   }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
   .modal {
-    background: #141810;
-    border: 1px solid var(--border2);
+    background: var(--surface);
+    border: 1.5px solid var(--border);
     border-radius: 20px 20px 0 0;
-    width: 100%; max-width: 600px;
-    max-height: 85vh; overflow-y: auto;
+    width: 100%;
+    max-width: 600px;
+    max-height: 88vh;
+    overflow-y: auto;
     padding: 28px;
     transform: translateY(40px);
     transition: transform 0.25s ease;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
   }
   .modal-overlay.open .modal { transform: translateY(0); }
+
+  /* Green top bar on modal */
+  .modal::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: var(--gecko);
+    margin: -28px -28px 24px;
+    border-radius: 0;
+  }
+
   .modal-top { display: flex; justify-content: space-between; margin-bottom: 20px; }
   .modal-close {
-    background: var(--surface); border: none; color: var(--muted);
-    width: 30px; height: 30px; border-radius: 50%;
-    cursor: pointer; font-size: 16px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .modal-name { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 4px; }
-  .modal-section { margin-bottom: 18px; }
-  .modal-section-label {
-    font-size: 9px; color: var(--dim);
-    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
-  }
-  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .modal-stat { background: var(--surface); border-radius: 8px; padding: 12px; }
-  .modal-stat-val { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--amber); }
-  .modal-stat-label { font-size: 10px; color: var(--dim); }
-  .social-links { display: flex; gap: 8px; flex-wrap: wrap; }
-  .social-link {
-    color: var(--amber); text-decoration: none; font-size: 12px;
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: 6px; padding: 5px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--border2);
+    color: var(--muted);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.15s;
   }
-  .social-link:hover { background: var(--amber); color: #0C0F0A; }
+  .modal-close:hover { background: var(--gecko); color: var(--ink); border-color: var(--gecko); }
+  .modal-name {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 700;
+    font-size: 30px;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+  .modal-section { margin-bottom: 18px; }
+  .modal-section-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-stat {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .modal-stat-val {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--gecko2);
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .modal-stat-label {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+  }
+  .social-links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .social-link {
+    color: var(--gecko2);
+    text-decoration: none;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    background: #F7F9F2;
+    border: 1px solid #DFF0C0;
+    border-radius: 6px;
+    padding: 5px 12px;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .social-link:hover { background: var(--gecko); color: var(--ink); border-color: var(--gecko); }
   .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
   .modal-actions .btn-directions { font-size: 13px; padding: 12px 0; }
   .modal-actions .btn-web { font-size: 13px; padding: 12px 18px; }
-  .verified-row { display: flex; justify-content: space-between; margin-top: 16px; font-size: 10px; color: var(--dim); }
-  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green2); margin-right: 4px; }
+  .verified-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gecko);
+    margin-right: 5px;
+  }
 </style>
 </head>
 <body>
 
 <!-- ── HEADER ──────────────────────────── -->
 <header>
-  <div class="eyebrow">🍁 The Definitive Directory</div>
-  <h1>Canada <span>Craft</span> Brewery Atlas</h1>
-  <p class="tagline">Every independent craft brewery · Every province · One searchable map</p>
-  <div class="stats">
-    <div class="stat"><span class="stat-num" id="statTotal">—</span><span class="stat-label">Breweries</span></div>
-    <div class="stat"><span class="stat-num" id="statProvinces">10</span><span class="stat-label">Provinces</span></div>
-    <div class="stat"><span class="stat-num" id="statShowing">—</span><span class="stat-label">Showing</span></div>
+  <div class="header-inner">
+    <div class="eyebrow">🍁 Thelma's Trail Guide</div>
+    <h1>Canada <em>Craft</em><br>Brewery Atlas</h1>
+    <p class="tagline">Every independent craft brewery · Every province · One searchable map</p>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num" id="statTotal">—</span>
+        <span class="stat-label">Breweries</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statProvinces">10</span>
+        <span class="stat-label">Provinces/States</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statShowing">—</span>
+        <span class="stat-label">Showing</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statVisited" style="color:#78BE20">0</span>
+        <span class="stat-label">Visited</span>
+      </div>
+    </div>
   </div>
 </header>
+
+<!-- ── JEEP STRIP ─────────────────────── -->
+<div class="jeep-strip">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAWGUlEQVR4nM16a3RcxZXut6vOOf1Qy5IsCz8g+IFxDObhAfOGcQvGPExwACOFhMwQEo98M0mYzGSYm5W5yVFzk6yVXC4XJoFExGAMGCfdfsi2LBkc6Ba2/LbxS4YxNtjgtyxLstTdp885VXt+SC3LskWwMXflW6t/dJ2q2vur2rX3rgdwnsDMgpmNz9tHMpk0mJnOl16fSyEAxMyCiBQRaQAaAL3//kdftkLiKgYu0VoPA1PEsCzOZrOhcDDo+K5naHDOMs0WIXDA9f33Ww6daCaiIz19gJklAO7p99wVPNeGzCyJSOX/79279w7DsP4u53qjIDgHpo818wdOLrufpDyS87z0iIsvzhJAB3btKwwNCgyyyBgmLXMUtD/O89VwImQDprnh+PHj9RMnTvwIAOLxuGxubuZYLHZORM+aIDMLdI8sb9mypSAYLnyUiMtDoWCrJOONlmxX08SxY4+eizJ79uy5MhAI3Ol63g1Zx23RxK9fOX58EwAkk0mjvLzcP5d+PzOSyWSvSW9vbv7u3n37lu3avftnmzY1j+xbj5lFktlgZtmzNqn/z7ZZxONx2bPmZH9Z27fvvPOD3btf3b1nzytN69f/Tb7ctm3xRXCjeDwuAWDnzp03bt/eXLdly7Zfr1mzbWgfUjIej8vP4yBs2xY9pt9btn379rve3bp1yfbm7b/MD/CZBuScwcyEHqXXv/vuE1t37Hhj586dN+a/n2+v10euyA8qAGzbtu2nm7duXb528+bL83I/t5C8OcTjcbl1x45XN2/d+hsAIi/giyDWH3kTB4BV61bd9O6WLY3vbtv2QF6Hc+64D7nIhs0bl2zetuXxHoHU42j+vyIfYzdu3Dhky9aty9auX18FnCPJvCP46KOPghs3b/7z6nXrHu3p3DyvWp8l8iZbU1NjNq1d03CuJCm/iNdv3JjYunXHXwW5PPLWY9u2tXnLlroNGzZ8taf8jI7nNObJZFISkb967fr/6/v+5usnXTFn48aN5qRJk7yBhMbjFbKs7Ogp67ElegGfUikBVFRczgCQSOwkVJz81Jw6StF+faZSUX2m4E5E2rZtEYvF3Gg0+s2CSOHilevW7Sai5p7ygROCvAmsXreucvPmd18B/npmrj/yuq5cu/LqDZs3La+vrw+cKUz1/un5QG+99VZZpHDQHz039+Ctt97agZ6s5UxCmEFE4N/WTa0cVGzclDmhB5sBKQ1DsJP2hpABKaWAYZLPxCKXUaXSgCMDslNogucpQ/sMwxAdROS4viYpcMIyqOP4MfOlHz608APbhojFcMZZyWc36zdu/B4xjbjuumv/o38K2esNE4mEICIdKSx8Uiv/+dtuu60tkUjQQORstgUReFb9w38TCuO5bMbzfI/3MrDO99RagJa4OV7U1eXOJ4EXWdMfQiHjFwHLehqKXmTwS5kTeoHvYpHrckoDa5mw1c1yiyAeW1SsZgEAqu0BZ7G8vNxPJpPG9ZMmPedrdfnq1auvISJ9mpfPF7zzzjs3rFm3Pp4fnQF7BpBMTjYAYM7blT+a89bXn/i0uueCV1Nfa5j15sMjuvUbOGfO697U1HTd2nUb/gicNF+gx8kkEgkCAJLyB12Z9H8CQEtLy4AzNwE7qaW5e/Z9pS4l4gXJ5GRjWzYkj4eyqn+bCS0XnLGv5n6OCQBGAca3olF39lvvfQLfvwLAoepEhRmPQ1VUJDQRTumrZ8YkEW1YuWq1u2rt2vJbb7wxGY/HZWVlpeodgVWrVk1cs3b9a/1H4C/hubpp83+3tOJC4NNH+rPC7rGM39d/9Ye/q5v2L5+lTT7b+fOfG69fvXb9bOAkB8ov1FWrVz/FRKtvu+mmRXFmUdlnoXb3AgKB/zN+//XBQgzPdtARYUU+sELp3x9c2/p1VEc1qmMABl4zfxkxIDpZIBXVF1y79e8siXty6RE/ZWv/7QBAbsn671fOOZx3bv1JEpFuWrN2bjrn/PzOaPQ927aFUV5e7sfj8YhWPLa97djPAPBp5NBNDhAoHJqbO+RCjD30iT7InaEZhjQ+jsUafcQaTyr5eRBr1EAjno1XvFtQbNzLhUemDhml/iQE4dDu9hiA6lRqsgQaT9kbplIpwcy8sqkpFbasBwC8F41GhQEAZWXDbmXgw2nTpmX+0saShJKe8sECHSy9MVbQnfh87bQvp11XWlbPaCopDEMwAPi+JngATEBrwULoU8zYMAT7vkOGFuwCkCax08kqXOSOI8u7SqX1DieX9UJhw2QhgwPpFY1GFRFxMplsIMt6CgBFo1FlAIA0xc3EtBIADeRcwCBAQSfvX6c9d5DQLDN+V9mYMfJ2X+u3RFa0kZQZ7ZMvpZH2PU1EMislKbYYSmmwVpYQlicILKSAlATf94OhYKGAYGlJHdTaLwgEVCBcnBvn+Z7n+yWLDTLN7An5Pqng+wDQcganRURs27YoLy/f39jU5K1YsWI0EX1IAPDOqqaXvRzsO+64ZR8zDxj7KuIVMlGZUDXLK8uJ3J96Dh8sKIJkli6TW0rgEAsOM1RAEAwNDgrBTASC0NA+LCLhA6SpZ8zY11oII6OZlYDI+h4cwxCdniNbNbwLoULtMpgLrn/ivodf2DTTy/uCM+mXt76VK5t+qqCbo7fdttBYvnz5YGLI1tYD+/MjMZAZJCoTqnuBx5MAp56Z+50Hacj+Xw8ZRmP8Pkbt+wpEAl5OgYQAs4YmDSgBAYYCICRBwAeRhJQ+QAxpELRiSCnhuQ5a9geXdX04/idPfP8X+5jrqAanO5e+OGl9egeYLwcAw7Ks0Z7nZyorK1Vv7DgD8vGPKNHznbjkonu+HwirEYf2ylVakau1SAuyPN/XwwNB45jylLQsK+16fkE245CQcrDKqU4zaHqGZRpae12hYFA6WTcsJRMRtWWdziGhAlKQunT4KL63q2D3SwD2EYGZQcnkZKM82qjONIsVFRUaAFwXH5LkKQBgKIWLIHQbAJSVlQ0Yx2KUz9KZnl/w3TIrIEICR7uO7RfzCuWYE0OLLg/s7XhzrCfayyweukwY2a9rP/CiGfQe82G8WjjY/KYka7mXc64lYRxUUIPJZxagvQUFxjXE4UUZfaiqNHBNU1lk3LHmj9+QhqZDBJo4q+7bm7KtXhfRq639veeZkBX+kTBEIQAICFFqGMaxgSrbdnfGUlP/yHXz1j708uzGu7cMGf3xLiN85PmW1vSHF5SM/NLEC79Hw0KTT9z0pZ/tLBCjVh/IbPs1K7Op6q7E0yoXXPePt8//NeUK1vzXu+n/AxVZoXPhWccOpv9InrHo4L6WV3KeWrFj36b5g8XkHROGfPdEibg5cNOl/xjSyo20t+VIDjqwqXjcsZ0vN9696uVkRey3STvCDOqfWOSX1+BAoEOQkPbs2UHhKr8km8sNNCpUXQ227UeDFDhYGy499qgIdlxlFHQWkZEZGQhnJob0eHn0gJ+o/tWPUk0rt7cMjVxThnTkGsOU2ThXSDBEzcYqUytlFhZTCRGHSKjCgnC4IGAFQxBGEfswRhZPvGF4wXX7n5/19OG5iWf+gM5x28Kh0mIz1HmlEciWwmq9QEbabykbffxn0ln/b0Tg7nh4Op58cp5WSpv3XHaZJQKWAcfLDXTGwugx9eHBKUsLnQeXF/l3rTTaJyd9ZbjEgaPK3J8eUjps8ve+/ZNbJl559ZiO7J62cInxsZfzh1RSgjzf01XX1vi+VqwcR/lKay+nFEhozayFlMoKBnHkxCd72tOfDK346mOjKx744VdEqONS5adbBBm+pUduDnXdsWqQM7WxOPfQUjM7rhk4c7gAgOXLf+MFQ6GOQCAgDC/ncdg0P+1YXCA6yh81ePqRS0ePG3n8eIdh6KKW2uaHhGWpwuPe5gkOfpkZO3py2xFn4Zcyx977+N+/2nR41ooHSyZPHmmQIQlISWZNHJGCWZHPSoAhXNcXwVAQAiI46iKxs92su3pEibOhK1s8qgN1V0B6JstspFTevmPCJd+4hCnLVtAMHw29fRh4FhUVcT7T4XxVVZV0nHSkg0LaEJKOSyGHnoEYbNsWRKReWDDjosbsP9275hBMVjLkuO6w0qHBUX5XZHHO9ffR8A2VzW0bThQPDg4iEfgDEelZb1akGxv3OY84k0yicv+FhulZ0VXYpQrYIS3SrPyMUtpIt/uZokKdfWxKozNn1Z3j9zvxy3Kumx1UGA7ljg95OhQM/sPe9Gvjd+14rVUKylpheJ0q+E0AK6sHyO2nT59ukZRqXUODYwgWLcw0/kwVY7GYtm1bVE2PHfh97aOzlZfbZUX0UTfTWkJemR92hux0sPsfigqMW+DlBuUcwJB8xSupB6ZkVMfIF9+efoOUzthnF9492Qr7lw4bK25Vyr3MMk0nk3XLQkGEfXiFDrdf/eLy6V+BOEHSNFFWFA61tii/5RCeLSgsrikY7A/1lasjgVBHtj3wtwFPbgGAatiI9cl980mKK2WxyezHYjHX8Dz9iTQxuNumT0/TJkzYSQC0lIGu/RuLN8Riz7afWoOeeW3lA+VamMGWA6JhxLCC8Z7I/i9D5i4xBBoFQ4RL/GXC1KYQuFlCGYL8hy3heYYlAoVSsdZif8g0Z7YcijyhpT/6oouta3QG8378aOLjHiG78tKemfP3F5eMCGa7/1Vz3+S+urqaAHBAyuHK150AYBx0uz4aaUUKamo2mpWVA5+caaNl9NgpOvXybfd3QQjpe550fU8PKgoe0xquUu7IwsKCK2GeuEa5jtCZkte6PG8MIHKhUOho6+Hc2KKi4K6uLu9iQZyDYbjZDiqzROAoSHnmRV13FuXCx3yduzTblUOkIFT+4tv33pvL4QJLSldIQ4EYjLaCtrbcjO4Z7CbUOxnVEwgxgLQeB+AAABgz7r+/c8VbyeyFo4+PBfDeQLmoEDra1ek94znmnkGDDNK+Z3guCpyukPQ9fxKZwgJ7X+7skB9aEXXz4IvSj7sOANIgIgRLGCBvSqi4OwUhApgJrBwEQgLtreYq7eoRngfPzYojBaHgks6ObJc03RwCgTQRcXunmysqpn8NBHLXANiAVEoAJw+kylI9iQrzlZCyCeg5stDMuwTT9cz8fiqVkgBOi4uuRxtZWW2PP1C7Ml82N/WNKk+mf9gUv3jyzQ/seK+4VJR2nqA2L1PyuhM4/j+U5wsQ9WbH3aROjh2DORg0qavN2J1uR/vQi9unBsKmOLDHe7Iz6+6/aEx41vbF0y+LxR5z8m1q6qa3+67aBgBIRTXQ2NtfNBpVAIhIju7q8H7TS1C5/juGJf6eiObE4/FTZq+5ufuwVmUi9VbE/9bLf/7mjdrxlna2GTuy2cxhtvSbY67MRqSw0r7iIqVURiBXKklIT0GRQI85MPpSAwjMxFoRNKsSEAlfIQeHTdMwCrIOH/F8vaJw3JuR2clHiwXryZ7n3QXfOGKFhuztzmJiHOtZgj0eXy9fvnw8iNX99995kJmFwcxUnUptvMnzfrRixYrSKVOmtKI7uDDQ62QQDuPmTz7I/eRLl4gxAE8pHCbvI11y/MRRd2dxsTPDOzF0sdPhRqyAmRFGerhzIjhbaSW10qemxb1X7gLQTFCGZl/JoAWkjxa86rnKlLBMP5P7SteRoneHXUiP+55jksBRpeV/aM+9PRxovYoIh5htAcS4Z/ZELBbTwjDu9ZVaC3Tv8o1UKiVj5eV+XUPDVp/FdAAvJJNJ2X9X73husHi4UTDjK6+/A+AdAPhd3SOVrmK/pERFIyXu8PY2p0MGjKEkVIEMZKdI4hAYYO6TR1A3OWINQDKkIvLNT4QM7fLdtsHBsHCDQXOidzA4y2dHpzNyzsypr+3pNdGlXxvEpA6iH6LRqLJtWyjNt/g55wf5MqPHbuGk06+GIpGnmPkPwOknycwcJGFom20xKrXXeqx8jiNMr0RRpjkSKnqKjM4Nw0Z7QmsF0xBwsgSGAEGcXHf5uJyfUQJYE8xCMdo0/dE5x0MoYqLtEG0oHGy95KQz/x4pNJmZ6elEZfBfKxLOrAaphClOifDxeFwSkaqvf/MeKcShe+6770C854TbICKOc1w+RA/tW/7mmx81NDTcP3Xq1EX994ZKa0sKTTGK6ZqaKgWABMM1TTPy8OS5q/7fvK9dYUS6rnbSCkRMIEMICUB92lWiBiDAAGtAC5gIR6zc3m3D3v7Vj19wfldXAcfp3uXW1FT5RMBLbxAZxgBn0pK+o308CYCaq6sZ6HEyFajQzEzLli17Tpjmc/F4fMlpqvianJx2AKCqqsafOfMF1lpQQJjCtm3xL1+PvQfgvU9hc7Yg0yAKhbQDgKtm1vgz8QJ7ruuQeTJHy09E/Rtv3EfEh+++646tfSfntIpLlzX8hIndaVOnPpVMJo2Wlue5sjKhnltY+QtANRqFpeuQ7TStQsv30+7PmcWfqu6buzKZtI0UUueF2YhdXTRz5ibvpTe+8XMItcGDTiFrmFah5ac7On4MgbrvT6tdFY9XSKAC6bIyc5jnLXG0/s6WNWsOAN1pJtDnfrCyslLH43GZTXc+FSyILFm8uKGhvLy82U7aBgAYRqCGpP+DkOlFPZ+0BW3A4h3fmjK26YBti/Ly2Hl7w8IMmjkTkEK+oDQ/bpFxA5usA6aSWbIOHyk8spYZtGnT/xSTJk3y6hve+BVJSjxw992ffNqxS+8xfl1d3cT6hoaGmpoa8/M+DfmikL8cWrJk2fS6+oa5fcs+Ffkz/YW1td+uXbr0FaD7eti2bWGzLfJHBcygbhP54tAt51SZNtsiT6S+vv6qJXX1b81etKi472uMv4h8B0uX1f/vxUvrfpsv+2uYybxuixoaRtU1NKxpaGj4MgDYZ/vyI9/Rn+YvfG5ePP5boHtEv6inVJ8FNTU1JgDMmzfvsoW1S5K1tbU3AGd3G3YK8g0XLV7687qGhjl5AeflldFZgJl7n5LV1taW1zUsT72eSEzqq+M5I9/BgiVL/ik+f2FdvLb28v5Cv0BQ38GsrV3y+IJFtfWLFi0a1Ve3zw27R0h84cKbFi5evCK+cOE/936zbXG+iTLzKcReicfHLq6rn7usfvmzVVVVJnAeyeXRSzIeD81LJH45f9HihbW1dff2rdPjiATO7R0q9YSk3jVeV1dXUldfZ89ftKj+9QULemWdjR84K0Vsm0Us1r3fWbBgwdXCMB/XioNMeqH2vPrKyspsX4VTqZRMAZgwwJVcWVkZtbS0cP/APHf+/EvDZqBCCnEtJK9yujLPVVZWup8axM8HwXwb27ZlLNaduSxYsOBqCONhKxAYQ8BuJ+e9k8vwpkcemTbgdcAZIOLx+KWGFbrFMoxbFXPA872321tb4jNmzOgETqaSZ63s2TbIw7ZtMWHCBMoLnT17dnFx6dDblOveQsTDFGuXWRzTrA56nn/MtKyOTDoDaUgEAgHJWpVKIYYZwhhOgko0a5eE2AmFxunTp23OyzlXYp+bYF+i0WhU9N8gz58/f4wPOZ5Yj/a1HiZIFni+KgQrDoWDx5hxQvl82CDskpL/68EHH2zNt2VmSiQSorKyUgMD3wd+Fvw3wSIZ7ju/vZkAAAAASUVORK5CYII=" style="height:48px;width:48px;vertical-align:middle;display:inline-block;border-radius:50%">
+  Jeep &amp; Ginger · Brewery Trail Tracker · Mark your visited breweries below
+  <img src="data:image/png;base64,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" style="height:48px;width:48px;vertical-align:middle;display:inline-block;border-radius:50%">
+</div>
 
 <!-- ── CONTROLS ─────────────────────────── -->
 <div class="controls">
@@ -370,17 +933,34 @@
     <input type="search" id="searchInput" placeholder="Search brewery name, city, style…" oninput="filterBreweries()">
   </div>
   <select id="provinceFilter" onchange="filterBreweries()">
-    <option value="">All Provinces</option>
-    <option value="ON">Ontario</option>
-    <option value="BC">British Columbia</option>
-    <option value="AB">Alberta</option>
-    <option value="QC">Québec</option>
-    <option value="MB">Manitoba</option>
-    <option value="SK">Saskatchewan</option>
-    <option value="NB">New Brunswick</option>
-    <option value="NS">Nova Scotia</option>
-    <option value="PE">Prince Edward Island</option>
-    <option value="NL">Newfoundland & Labrador</option>
+    <option value="">🍁 + 🇺🇸 All</option>
+    <optgroup label="── Canada ──">
+      <option value="ON">Ontario</option>
+      <option value="BC">British Columbia</option>
+      <option value="AB">Alberta</option>
+      <option value="QC">Québec</option>
+      <option value="MB">Manitoba</option>
+      <option value="SK">Saskatchewan</option>
+      <option value="NB">New Brunswick</option>
+      <option value="NS">Nova Scotia</option>
+      <option value="PE">Prince Edward Island</option>
+      <option value="NL">Newfoundland &amp; Labrador</option>
+    </optgroup>
+    <optgroup label="── Nashville Run ──">
+      <option value="NY">New York</option>
+      <option value="PA">Pennsylvania</option>
+      <option value="OH">Ohio</option>
+      <option value="KY">Kentucky</option>
+      <option value="TN">Tennessee</option>
+    </optgroup>
+    <optgroup label="── Florida Run ──">
+      <option value="WV">West Virginia</option>
+      <option value="VA">Virginia</option>
+      <option value="NC">North Carolina</option>
+      <option value="SC">South Carolina</option>
+      <option value="GA">Georgia</option>
+      <option value="FL">Florida</option>
+    </optgroup>
   </select>
   <select id="typeFilter" onchange="filterBreweries()">
     <option value="">All Types</option>
@@ -389,7 +969,23 @@
     <option value="nano">Nano</option>
     <option value="regional">Regional</option>
   </select>
+  <div class="view-toggle">
+    <button class="view-btn active" id="btnGrid" onclick="setView('grid')">⊞ Cards</button>
+    <button class="view-btn" id="btnMap" onclick="setView('map')">📍 Map</button>
+  </div>
   <div class="result-count">Showing <span id="countDisplay">—</span> breweries</div>
+</div>
+
+<!-- ── ROUTE PLANNER ─────────────────────── -->
+<div class="route-planner" id="routePlanner">
+  <span class="route-label">🚙 Route</span>
+  <input class="route-input" id="routeFrom" placeholder="From (e.g. St. Catharines, ON)">
+  <span class="route-arrow">→</span>
+  <input class="route-input" id="routeTo" placeholder="To (e.g. Nashville, TN)">
+  <button class="route-btn" onclick="planRoute()">Find Breweries</button>
+  <button class="route-btn clear" id="routeClearBtn" onclick="clearRoute()" style="display:none">✕ Clear</button>
+  <span class="route-status" id="routeStatus"></span>
+
 </div>
 
 <!-- ── FEATURE FILTERS ──────────────────── -->
@@ -402,16 +998,51 @@
   <button class="feat-btn" data-feat="tours"      onclick="toggleFeat(this)">🗺️ Tours</button>
   <button class="feat-btn" data-feat="accessible" onclick="toggleFeat(this)">♿ Accessible</button>
   <button class="feat-btn" data-feat="ocb"        onclick="toggleFeat(this)">✓ OCB / Guild Member</button>
+  <button class="feat-btn" data-feat="visited"    onclick="toggleFeat(this)" style="border-color:var(--gecko);color:var(--gecko2)">🚙 Visited</button>
 </div>
 
 <!-- ── GRID ─────────────────────────────── -->
-<div class="grid-wrap">
+<div class="grid-wrap" id="gridWrap">
   <div class="grid" id="breweryGrid"></div>
 </div>
+
+<!-- ── MAP VIEW ──────────────────────────── -->
+<div id="mapView"></div>
 
 <!-- ── MODAL ─────────────────────────────── -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal" id="modal"></div>
+</div>
+
+<!-- ── TRAIL DASHBOARD ───────────────────── -->
+<div class="dashboard" id="dashboard">
+  <div class="dashboard-inner">
+    <div class="dashboard-heading">🚙 Thelma's Trail Stats</div>
+    <div class="dashboard-grid">
+      <div class="dash-stat">
+        <div><span class="dash-stat-num" id="dashVisited">0</span></div>
+        <div class="dash-stat-label">Breweries Visited</div>
+      </div>
+      <div class="dash-stat">
+        <div><span class="dash-stat-num" id="dashKm">0</span><span class="dash-stat-unit">km</span></div>
+        <div class="dash-stat-label">Trail Distance</div>
+      </div>
+      <div class="dash-stat">
+        <div><span class="dash-stat-num" id="dashProvinces">0</span></div>
+        <div class="dash-stat-label">Provinces Explored</div>
+      </div>
+      <div class="dash-stat">
+        <div><span class="dash-stat-num" id="dashAvgKm">—</span></div>
+        <div class="dash-stat-label">Avg km Between Stops</div>
+      </div>
+    </div>
+    <div class="dash-trail">
+      <div class="dash-trail-label">🗺️ Trail Route (in Sheet order)</div>
+      <div class="trail-list" id="trailList">
+        <span class="trail-empty">No visited breweries yet — add a jeep_post URL to your Sheet to start tracking.</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <footer>
@@ -424,15 +1055,88 @@
 // ═══════════════════════════════════════════════════════
 const SHEET_ID = '1071nhgKo4kStR5KkikpWEq8LKKDnMqE7FOhp3wZv9dw';
 
-// Province colors
+// Province/State colors
 const PROV_COLORS = {
-  ON:'#D4922A', BC:'#4A90E2', AB:'#7ED321', QC:'#E8704A',
-  MB:'#BD10E0', SK:'#50E3C2', NB:'#F8C41C', NS:'#E84A4A',
-  PE:'#A0522D', NL:'#5C7AEA'
+  // Canada
+  ON:'#E8672A', BC:'#2A7BE8', AB:'#D4A017', QC:'#C4392F',
+  MB:'#8A3DBF', SK:'#1D9E6E', NB:'#D4681A', NS:'#C4293A',
+  PE:'#A0522D', NL:'#3A5EC4',
+  // Nashville Run
+  NY:'#1565C0', PA:'#4527A0', OH:'#00838F', KY:'#558B2F', TN:'#6A1B9A',
+  // Florida Run
+  WV:'#37474F', VA:'#AD1457', NC:'#00695C', SC:'#4E342E', GA:'#BF360C', FL:'#0277BD'
 };
 
+// US state name map for Open Brewery DB API
+const US_STATES = {
+  NY:'new_york', PA:'pennsylvania', OH:'ohio', KY:'kentucky', TN:'tennessee',
+  WV:'west_virginia', VA:'virginia', NC:'north_carolina', SC:'south_carolina',
+  GA:'georgia', FL:'florida'
+};
+
+// ── HAVERSINE DISTANCE (km) ────────────────────────────
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── DASHBOARD UPDATE ───────────────────────────────────
+function updateDashboard() {
+  // Visited breweries in Sheet order (jeep_post rows come first since Sheet is chronological)
+  const visited = allBreweries.filter(b => b.jeep_post && b.lat && b.lng);
+
+  // Total km: chain distance between consecutive visited stops
+  let totalKm = 0;
+  for (let i = 1; i < visited.length; i++) {
+    totalKm += haversine(visited[i-1].lat, visited[i-1].lng, visited[i].lat, visited[i].lng);
+  }
+
+  const provinces = new Set(visited.map(b => b.province).filter(Boolean));
+  const avgKm = visited.length > 1 ? Math.round(totalKm / (visited.length - 1)) : 0;
+
+  document.getElementById('dashVisited').textContent   = visited.length;
+  document.getElementById('dashKm').textContent        = Math.round(totalKm).toLocaleString();
+  document.getElementById('dashProvinces').textContent = provinces.size;
+  document.getElementById('dashAvgKm').textContent     = visited.length > 1 ? avgKm : '—';
+
+  // Trail route dots
+  const trailEl = document.getElementById('trailList');
+  if (!visited.length) {
+    trailEl.innerHTML = '<span class="trail-empty">No visited breweries yet — add a jeep_post URL to your Sheet to start tracking.</span>';
+    return;
+  }
+  trailEl.innerHTML = visited.map((b, i) => `
+    <div class="trail-stop">
+      <div class="trail-dot" title="${b.name} · ${b.city}" onclick="openModal('${b.id}')">${i+1}</div>
+      ${i < visited.length - 1 ? '<div class="trail-line"></div>' : ''}
+    </div>
+  `).join('');
+}
+
+// ── VISITED STATE ──────────────────────────────────────
+const visitedSet = new Set(JSON.parse(localStorage.getItem('visitedBreweries') || '[]'));
+function saveVisited() { localStorage.setItem('visitedBreweries', JSON.stringify([...visitedSet])); }
+function toggleVisited(id, event) {
+  event.stopPropagation();
+  visitedSet.has(id) ? visitedSet.delete(id) : visitedSet.add(id);
+  saveVisited();
+  updateVisitedStat();
+  render();
+  const btn = document.getElementById('visitedBtn');
+  if (btn) {
+    btn.textContent = visitedSet.has(id) ? '✅ Visited!' : '🚙 Mark Visited';
+    btn.classList.toggle('marked', visitedSet.has(id));
+  }
+}
+function updateVisitedStat() {
+  document.getElementById('statVisited').textContent = visitedSet.size;
+}
+
 // ─────────────────────────────────────────────────────
-// SAMPLE DATA — shown if Sheet fails to load
+// SAMPLE DATA
 // ─────────────────────────────────────────────────────
 const SAMPLE_DATA = [
   {
@@ -480,11 +1184,11 @@ const SAMPLE_DATA = [
 // ─────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────
-let allBreweries = [];   // only ever holds status='active' rows
+let allBreweries = [];
 let activeFeats  = new Set();
 
 // ─────────────────────────────────────────────────────
-// INIT — load Sheet, filter to active only
+// INIT
 // ─────────────────────────────────────────────────────
 async function init() {
   try {
@@ -493,14 +1197,12 @@ async function init() {
     const text = await res.text();
     const json = JSON.parse(text.substring(47).slice(0, -2));
     const cols = json.table.cols.map(c => c.label.toLowerCase().trim());
-
     const rows = json.table.rows.map(row => {
       const obj = {};
       cols.forEach((col, i) => {
         const cell = row.c[i];
         obj[col] = cell ? (cell.v !== null ? cell.v : '') : '';
       });
-      // Coerce booleans from Sheet (TRUE/FALSE strings or real booleans)
       ['taproom','patio','kitchen','pet','tours','accessible','ocb_member'].forEach(k => {
         obj[k] = obj[k] === true || obj[k] === 'TRUE' || obj[k] === 'true' || obj[k] === 1;
       });
@@ -508,17 +1210,56 @@ async function init() {
       obj.lng = parseFloat(obj.lng) || 0;
       return obj;
     });
-
-    // ── ACTIVE FILTER ──────────────────────────────────
-    // Only show rows the Auditor has stamped 'active'.
-    // 'pending' and 'needs_review' rows are never shown publicly.
     allBreweries = rows.filter(b => b.name && b.status === 'active');
-
-    console.log(`Loaded ${rows.length} total rows, ${allBreweries.length} active.`);
-
+    allBreweries.forEach(b => { if (b.jeep_post) visitedSet.add(b.id); });
   } catch(e) {
     console.warn('Sheet load failed — using sample data:', e);
     allBreweries = SAMPLE_DATA;
+  }
+
+  // ── FETCH US BREWERIES FROM OPEN BREWERY DB ────────────
+  document.getElementById('breweryGrid').innerHTML =
+    '<div class="empty"><div class="empty-icon">🍺</div><h3>LOADING US BREWERIES...</h3><p>Fetching all 11 states along your routes.</p></div>';
+
+  try {
+    const stateCodes = Object.keys(US_STATES);
+    const fetches = stateCodes.map(async code => {
+      const stateName = US_STATES[code];
+      // Fetch up to 200 per state (API max per_page=200)
+      const pages = [1, 2, 3];
+      const results = await Promise.all(pages.map(p =>
+        fetch(`https://api.openbrewerydb.org/v1/breweries?by_state=${stateName}&per_page=200&page=${p}&by_type=micro,brewpub,nano,regional,large,planning,contract,proprietor`)
+          .then(r => r.json()).catch(() => [])
+      ));
+      return results.flat().map(b => ({
+        id:       'us_' + b.id,
+        name:     b.name,
+        province: code,
+        city:     b.city,
+        region:   b.state,
+        type:     b.brewery_type,
+        lat:      parseFloat(b.latitude)  || 0,
+        lng:      parseFloat(b.longitude) || 0,
+        address:  b.street || '',
+        postal:   b.postal_code || '',
+        phone:    b.phone || '',
+        website:  b.website_url || '',
+        styles:   '',
+        founded:  '',
+        ocb_member: false,
+        taproom:  true,
+        patio:    false, kitchen:false, pet:false, tours:false, accessible:false,
+        status:   'active',
+        notes:    `Open Brewery DB · ${b.brewery_type}`
+      })).filter(b => b.name && b.lat && b.lng);
+    });
+
+    const usResults = await Promise.all(fetches);
+    const usBreweries = usResults.flat();
+    allBreweries = [...allBreweries, ...usBreweries];
+    console.log(`Loaded ${usBreweries.length} US breweries across ${stateCodes.length} states`);
+  } catch(e) {
+    console.warn('US brewery fetch failed:', e);
   }
 
   updateStats();
@@ -535,13 +1276,14 @@ function getFiltered() {
   return allBreweries.filter(b => {
     if (prov && b.province !== prov) return false;
     if (type && b.type !== type) return false;
-    if (activeFeats.has('ocb') && !b.ocb_member) return false;
-    if (activeFeats.has('taproom')    && !b.taproom)    return false;
-    if (activeFeats.has('patio')      && !b.patio)      return false;
-    if (activeFeats.has('kitchen')    && !b.kitchen)    return false;
-    if (activeFeats.has('pet')        && !b.pet)        return false;
-    if (activeFeats.has('tours')      && !b.tours)      return false;
-    if (activeFeats.has('accessible') && !b.accessible) return false;
+    if (activeFeats.has('ocb')        && !b.ocb_member)           return false;
+    if (activeFeats.has('taproom')    && !b.taproom)              return false;
+    if (activeFeats.has('patio')      && !b.patio)                return false;
+    if (activeFeats.has('kitchen')    && !b.kitchen)              return false;
+    if (activeFeats.has('pet')        && !b.pet)                  return false;
+    if (activeFeats.has('tours')      && !b.tours)                return false;
+    if (activeFeats.has('accessible') && !b.accessible)           return false;
+    if (activeFeats.has('visited')    && !visitedSet.has(b.id))   return false;
     if (q) {
       const hay = `${b.name} ${b.city} ${b.province} ${b.styles} ${b.region}`.toLowerCase();
       if (!hay.includes(q)) return false;
@@ -571,16 +1313,16 @@ function render() {
   if (!filtered.length) {
     grid.innerHTML = `<div class="empty">
       <div class="empty-icon">🍺</div>
-      <h3>No breweries found</h3>
+      <h3>No Breweries Found</h3>
       <p>Try adjusting your search or filters.</p>
     </div>`;
     return;
   }
 
   grid.innerHTML = filtered.map((b, i) => {
-    const color   = PROV_COLORS[b.province] || '#D4922A';
+    const color    = PROV_COLORS[b.province] || '#78BE20';
     const styleArr = typeof b.styles === 'string' ? b.styles.split(',').map(s=>s.trim()).filter(Boolean) : [];
-    const feats   = [
+    const feats    = [
       b.taproom    && ['🍺','Taproom'],
       b.patio      && ['☀️','Patio'],
       b.kitchen    && ['🍔','Kitchen'],
@@ -588,22 +1330,21 @@ function render() {
       b.tours      && ['🗺️','Tours'],
       b.accessible && ['♿','Accessible'],
     ].filter(Boolean);
-    const mapsUrl = `https://maps.google.com/?q=${b.lat},${b.lng}`;
+    const mapsUrl   = `https://maps.google.com/?q=${b.lat},${b.lng}`;
+    const isVisited = visitedSet.has(b.id);
     return `
-    <div class="card" style="--province-color:${color}; animation-delay:${i*30}ms"
+    <div class="card ${isVisited ? 'visited' : ''}" style="--province-color:${color}; animation-delay:${i*25}ms"
          onclick="openModal('${b.id}')">
       <div class="card-header">
-        <div>
-          <div style="display:flex;gap:7px;align-items:center;margin-bottom:4px">
-            <div class="province-dot"></div>
-            <span class="card-region">${b.province} · ${b.region||b.city}</span>
-          </div>
+        <div style="display:flex;gap:7px;align-items:center">
+          <div class="province-dot"></div>
+          <span class="card-region">${b.province} · ${b.region||b.city}</span>
         </div>
         ${b.ocb_member ? '<span class="ocb-badge">✓ Member</span>' : ''}
       </div>
       <div class="card-name">${b.name}</div>
       <div class="card-city">${b.city}${b.founded ? ' · Est. '+b.founded : ''}</div>
-      <div class="styles">
+      ${renderRating(b)}
         ${styleArr.slice(0,4).map(s=>`<span class="style-tag">${s}</span>`).join('')}
         ${styleArr.length>4?`<span class="style-tag">+${styleArr.length-4}</span>`:''}
       </div>
@@ -625,10 +1366,10 @@ function render() {
 function openModal(id) {
   const b = allBreweries.find(x => x.id === id);
   if (!b) return;
-  const color   = PROV_COLORS[b.province] || '#D4922A';
+  const color    = PROV_COLORS[b.province] || '#78BE20';
   const styleArr = typeof b.styles === 'string' ? b.styles.split(',').map(s=>s.trim()).filter(Boolean) : [];
-  const mapsUrl = `https://maps.google.com/?q=${b.lat},${b.lng}`;
-  const feats = [
+  const mapsUrl  = `https://maps.google.com/?q=${b.lat},${b.lng}`;
+  const feats    = [
     b.taproom    && '🍺 Taproom',
     b.patio      && '☀️ Patio',
     b.kitchen    && '🍔 Kitchen',
@@ -642,11 +1383,11 @@ function openModal(id) {
       <div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
           <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
-          <span style="font-size:11px;color:${color};letter-spacing:.06em;text-transform:uppercase">${b.province} · ${b.city}</span>
+          <span style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;color:${color};letter-spacing:.08em;text-transform:uppercase">${b.province} · ${b.city}</span>
           ${b.ocb_member ? '<span class="ocb-badge">✓ Guild Member</span>' : ''}
         </div>
         <div class="modal-name">${b.name}</div>
-        ${b.legal_name && b.legal_name !== b.name ? `<div style="font-size:11px;color:var(--muted)">${b.legal_name}</div>` : ''}
+        ${b.legal_name && b.legal_name !== b.name ? `<div style="font-size:11px;color:var(--muted);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif">${b.legal_name}</div>` : ''}
       </div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
@@ -664,8 +1405,8 @@ function openModal(id) {
 
     <div class="modal-section">
       <div class="modal-section-label">Address</div>
-      <div style="font-size:13px;color:var(--text)">${b.address}, ${b.city}, ${b.province} ${b.postal}</div>
-      <div style="font-size:11px;color:#4A9EF5;margin-top:4px">📍 ${b.lat}, ${b.lng}</div>
+      <div style="font-size:13px;color:var(--ink)">${b.address}, ${b.city}, ${b.province} ${b.postal}</div>
+      <div style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;color:#2A7BE8;margin-top:4px">📍 ${b.lat}, ${b.lng}</div>
       ${b.phone ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">📞 ${b.phone}</div>` : ''}
     </div>
 
@@ -677,7 +1418,7 @@ function openModal(id) {
 
     ${feats.length ? `
     <div class="modal-section">
-      <div class="modal-section-label">Features & Amenities</div>
+      <div class="modal-section-label">Features &amp; Amenities</div>
       <div class="features">${feats.map(f=>`<span class="feat-tag">${f}</span>`).join('')}</div>
     </div>` : ''}
 
@@ -688,9 +1429,10 @@ function openModal(id) {
     </div>` : ''}
 
     <div class="modal-section">
-      <div class="modal-section-label">Socials & Web</div>
+      <div class="modal-section-label">Socials &amp; Web</div>
       <div class="social-links">
         ${b.website   ? `<a class="social-link" href="${b.website}" target="_blank">🌐 Website</a>` : ''}
+        ${b.jeep_post ? `<a class="social-link" href="${b.jeep_post}" target="_blank" style="background:#EDF7D8;border-color:#C5E89A">🚙 Our Visit</a>` : ''}
         ${b.instagram ? `<a class="social-link" href="https://instagram.com/${b.instagram.replace('@','')}" target="_blank">📸 Instagram</a>` : ''}
         ${b.untappd   ? `<a class="social-link" href="https://untappd.com/brewery/${b.untappd}" target="_blank">🍺 Untappd</a>` : ''}
         ${b.facebook  ? `<span class="social-link">Facebook: ${b.facebook}</span>` : ''}
@@ -700,6 +1442,10 @@ function openModal(id) {
     <div class="modal-actions">
       <a class="btn-directions" href="${mapsUrl}" target="_blank">📍 Get Directions</a>
       ${b.website ? `<a class="btn-web" href="${b.website}" target="_blank">Website ↗</a>` : ''}
+      <button id="visitedBtn" class="btn-visited ${visitedSet.has(b.id) ? 'marked' : ''}"
+              onclick="toggleVisited('${b.id}', event)">
+        ${visitedSet.has(b.id) ? '✅ Visited!' : '🚙 Mark Visited'}
+      </button>
     </div>
 
     <div class="verified-row">
@@ -722,15 +1468,14 @@ function closeModal(e) {
 // STATS
 // ─────────────────────────────────────────────────────
 function updateStats() {
-  // allBreweries only contains active rows — counts are always accurate
   document.getElementById('statTotal').textContent    = allBreweries.length;
   document.getElementById('statShowing').textContent  = allBreweries.length;
   document.getElementById('countDisplay').textContent = allBreweries.length;
-  const provs = new Set(allBreweries.map(b => b.province));
-  document.getElementById('statProvinces').textContent = provs.size;
+  document.getElementById('statProvinces').textContent = new Set(allBreweries.map(b => b.province)).size;
+  updateVisitedStat();
+  updateDashboard();
 }
 
-// Keyboard shortcut: Escape closes modal
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.getElementById('modalOverlay').classList.remove('open');
@@ -738,9 +1483,225 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ─────────────────────────────────────────────────────
-// GO
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+// MAP VIEW
+// ═══════════════════════════════════════════════════════
+let map = null;
+let mapMarkers = [];
+let currentView = 'grid';
+
+function setView(view) {
+  currentView = view;
+  const gridWrap = document.getElementById('gridWrap');
+  const mapView  = document.getElementById('mapView');
+  const btnGrid  = document.getElementById('btnGrid');
+  const btnMap   = document.getElementById('btnMap');
+  const routeBar = document.getElementById('routePlanner');
+
+  if (view === 'map') {
+    gridWrap.classList.add('hidden');
+    mapView.classList.add('active');
+    btnGrid.classList.remove('active');
+    btnMap.classList.add('active');
+    routeBar.classList.add('active');
+    initMap();
+    renderMap();
+  } else {
+    gridWrap.classList.remove('hidden');
+    mapView.classList.remove('active');
+    btnGrid.classList.add('active');
+    btnMap.classList.remove('active');
+    routeBar.classList.remove('active');
+    render();
+  }
+}
+
+function initMap() {
+  if (map) return; // already initialised
+  // Load Leaflet dynamically
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = () => {
+    map = L.map('mapView').setView([44.5, -76.5], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      maxZoom: 19
+    }).addTo(map);
+    renderMap();
+  };
+  document.head.appendChild(script);
+}
+
+function renderMap() {
+  if (!map || typeof L === 'undefined') return;
+
+  // Clear existing markers
+  mapMarkers.forEach(m => map.removeLayer(m));
+  mapMarkers = [];
+
+  const filtered = getFiltered().filter(b => b.lat && b.lng);
+
+  filtered.forEach(b => {
+    const color     = PROV_COLORS[b.province] || '#78BE20';
+    const isVisited = visitedSet.has(b.id);
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:${isVisited ? 14 : 10}px;
+        height:${isVisited ? 14 : 10}px;
+        background:${isVisited ? '#78BE20' : color};
+        border-radius:50%;
+        border:2px solid ${isVisited ? '#fff' : 'rgba(255,255,255,0.4)'};
+        box-shadow:0 0 ${isVisited ? '8px #78BE2088' : '4px rgba(0,0,0,0.5)'};
+        cursor:pointer;
+      "></div>`,
+      iconSize: [isVisited ? 14 : 10, isVisited ? 14 : 10],
+      iconAnchor: [isVisited ? 7 : 5, isVisited ? 7 : 5],
+    });
+
+    const marker = L.marker([b.lat, b.lng], { icon })
+      .addTo(map)
+      .bindPopup(`
+        <div class="map-popup-name">${b.name}</div>
+        <div class="map-popup-city">${b.city}, ${b.province}</div>
+        ${isVisited ? '<div class="map-popup-visited">🚙 Visited</div>' : ''}
+        <button class="map-popup-btn" onclick="openModal('${b.id}')">Details</button>
+        <a class="map-popup-btn" href="https://maps.google.com/?q=${b.lat},${b.lng}" target="_blank">Directions</a>
+      `, { maxWidth: 220 });
+
+    mapMarkers.push(marker);
+  });
+
+  // Fit bounds to visible markers
+  if (filtered.length > 0) {
+    const bounds = L.latLngBounds(filtered.map(b => [b.lat, b.lng]));
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }
+}
+
+// Override render to also update map if in map view
+const _origRender = window.render || render;
+function render() {
+  _origRender();
+  if (currentView === 'map') renderMap();
+}
+
+// ═══════════════════════════════════════════════════════
+// ROUTE PLANNER
+// ═══════════════════════════════════════════════════════
+let routeActive = false;
+let routeLine   = null; // [fromLat,fromLng] → [toLat,toLng]
+
+async function geocode(place) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&limit=1`;
+  const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  const data = await res.json();
+  if (!data.length) throw new Error(`Could not find "${place}"`);
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
+}
+
+// Perpendicular distance from point P to line segment A→B (in km)
+function distToSegment(pLat, pLng, aLat, aLng, bLat, bLng) {
+  // Convert to flat coords (good enough for < 2000km)
+  const dx = bLng - aLng, dy = bLat - aLat;
+  const lenSq = dx*dx + dy*dy;
+  if (lenSq === 0) return haversine(pLat, pLng, aLat, aLng);
+  let t = ((pLng - aLng)*dx + (pLat - aLat)*dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return haversine(pLat, pLng, aLat + t*dy, aLng + t*dx);
+}
+
+async function planRoute() {
+  const fromStr = document.getElementById('routeFrom').value.trim();
+  const toStr   = document.getElementById('routeTo').value.trim();
+  if (!fromStr || !toStr) { alert('Please enter both a start and end city.'); return; }
+
+  const status = document.getElementById('routeStatus');
+  status.textContent = 'Geocoding…';
+
+  try {
+    const [from, to] = await Promise.all([geocode(fromStr), geocode(toStr)]);
+    routeLine = { from, to };
+    routeActive = true;
+
+    const totalKm = Math.round(haversine(from.lat, from.lng, to.lat, to.lng));
+    status.innerHTML = `${from.name} → ${to.name} <span class="route-km-badge">${totalKm.toLocaleString()} km straight-line</span>`;
+    document.getElementById('routeClearBtn').style.display = 'inline-block';
+
+    // Sort breweries by distance from route (closest first), max 100km corridor
+    render();
+
+    // If map is visible, draw route line
+    if (currentView === 'map' && map && typeof L !== 'undefined') {
+      if (window._routePolyline) map.removeLayer(window._routePolyline);
+      window._routePolyline = L.polyline(
+        [[from.lat, from.lng], [to.lat, to.lng]],
+        { color: '#78BE20', weight: 3, dashArray: '8,6', opacity: 0.7 }
+      ).addTo(map);
+      map.fitBounds([[from.lat, from.lng], [to.lat, to.lng]], { padding: [60, 60] });
+    }
+  } catch(e) {
+    status.textContent = e.message;
+  }
+}
+
+function clearRoute() {
+  routeActive = false;
+  routeLine = null;
+  document.getElementById('routeStatus').textContent = '';
+  document.getElementById('routeClearBtn').style.display = 'none';
+  if (window._routePolyline && map) map.removeLayer(window._routePolyline);
+  render();
+}
+
+// Patch getFiltered to sort by route distance when active
+const _origGetFiltered = getFiltered;
+function getFiltered() {
+  let results = _origGetFiltered();
+  if (routeActive && routeLine) {
+    const { from, to } = routeLine;
+    // Score each brewery by distance to route segment
+    results = results
+      .map(b => ({
+        ...b,
+        _routeDist: b.lat && b.lng
+          ? distToSegment(b.lat, b.lng, from.lat, from.lng, to.lat, to.lng)
+          : 9999
+      }))
+      .filter(b => b._routeDist < 100) // within 100km of route line
+      .sort((a, b) => {
+        // Sort by progress along route first (so breweries appear in road-trip order)
+        const dx = to.lng - from.lng, dy = to.lat - from.lat;
+        const lenSq = dx*dx + dy*dy;
+        const tA = ((a.lng - from.lng)*dx + (a.lat - from.lat)*dy) / lenSq;
+        const tB = ((b.lng - from.lng)*dx + (b.lat - from.lat)*dy) / lenSq;
+        return tA - tB;
+      });
+  }
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════
+// UNTAPPD RATINGS
+// ═══════════════════════════════════════════════════════
+// Untappd blocks CORS so we can't fetch ratings live in browser.
+// We store ratings in a local cache keyed by untappd slug and
+// display them when available. Users can populate via the Sheet
+// by adding an `untappd_rating` column (e.g. 3.87).
+// If the brewery has a rating in the sheet data, show it.
+function renderRating(b) {
+  const rating = parseFloat(b.untappd_rating);
+  if (!rating || isNaN(rating)) return '';
+  const filled  = Math.floor(rating);
+  const half    = rating - filled >= 0.5;
+  const stars   = '★'.repeat(filled) + (half ? '½' : '') + '☆'.repeat(5 - filled - (half?1:0));
+  return `<div class="untappd-rating">
+    <span class="stars">${stars}</span>
+    ${rating.toFixed(2)}
+    <span style="color:var(--dim);font-weight:400">Untappd</span>
+  </div>`;
+}
+
 init();
 </script>
 </body>

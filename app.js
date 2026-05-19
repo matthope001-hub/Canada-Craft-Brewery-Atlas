@@ -2,10 +2,6 @@
 // CONFIGURATION
 // ═══════════════════════════════════════════════════════
 const SHEET_ID = '1071nhgKo4kStR5KkikpWEq8LKKDnMqE7FOhp3wZv9dw';
-const UNTAPPD_PROXY = 'https://untappd-proxy.matt-hope001.workers.dev';
-
-// In-memory cache for fetched ratings {slug → rating}
-const ratingCache = {};
 
 // Province/State colors
 const PROV_COLORS = {
@@ -322,7 +318,6 @@ function render() {
       </div>
       <div class="card-name">${b.name}</div>
       <div class="card-city">${b.city}${b.founded ? ' · Est. '+b.founded : ''}</div>
-      ${renderRating(b)}
       <div class="styles">
         ${styleArr.slice(0,4).map(s=>`<span class="style-tag">${s}</span>`).join('')}
         ${styleArr.length>4?`<span class="style-tag">+${styleArr.length-4}</span>`:''}
@@ -625,54 +620,6 @@ function clearRoute() {
 
 // Route sorting is handled inside getFiltered directly — no override needed
 
-// ═══════════════════════════════════════════════════════
-// UNTAPPD RATINGS — auto-fetch via Cloudflare Worker proxy
-// ═══════════════════════════════════════════════════════
-async function fetchRating(slug) {
-  if (!slug) return null;
-  if (ratingCache[slug] !== undefined) return ratingCache[slug];
-  try {
-    const res  = await fetch(`${UNTAPPD_PROXY}?slug=${encodeURIComponent(slug)}`);
-    const data = await res.json();
-    const rating = data.rating ?? null;
-    ratingCache[slug] = rating;
-    return rating;
-  } catch {
-    ratingCache[slug] = null;
-    return null;
-  }
-}
-
-function renderRating(b) {
-  // Show from sheet column if available immediately
-  const sheetRating = parseFloat(b.untappd_rating);
-  const rating = !isNaN(sheetRating) ? sheetRating : (b.untappd ? ratingCache[b.untappd] : null);
-  if (!rating) {
-    // Trigger background fetch if slug exists, then update card
-    if (b.untappd && !ratingCache.hasOwnProperty(b.untappd)) {
-      fetchRating(b.untappd).then(r => {
-        if (r !== null) {
-          // Update just this card's rating element if it's in the DOM
-          const el = document.getElementById(`rating-${b.id}`);
-          if (el) el.outerHTML = buildRatingHTML(r, b.id);
-        }
-      });
-    }
-    return `<div id="rating-${b.id}"></div>`;
-  }
-  return buildRatingHTML(rating, b.id);
-}
-
-function buildRatingHTML(rating, id) {
-  const filled = Math.floor(rating);
-  const half   = rating - filled >= 0.5;
-  const stars  = '★'.repeat(filled) + (half ? '½' : '') + '☆'.repeat(5 - filled - (half?1:0));
-  return `<div class="untappd-rating" id="rating-${id}">
-    <span class="stars">${stars}</span>
-    ${rating.toFixed(2)}
-    <span style="color:var(--dim);font-weight:400">Untappd</span>
-  </div>`;
-}
 
 // ── START ──────────────────────────────────────────────
 document.addEventListener('keydown', e => {

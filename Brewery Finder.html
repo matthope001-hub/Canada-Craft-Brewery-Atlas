@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ontario Brewery Finder — Missing Breweries Tool</title>
+<style>
+  :root {
+    --gecko: #78BE20;
+    --ink: #1A1A18;
+    --bg: #F5F2EC;
+    --surface: #fff;
+    --muted: #6B6860;
+    --border: #E0DDD5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+  h1 em { color: var(--gecko); font-style: normal; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  textarea {
+    width: 100%;
+    height: 120px;
+    background: #f8f7f4;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 11px;
+    resize: vertical;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--gecko); }
+  .btn {
+    display: inline-block;
+    background: var(--gecko);
+    color: var(--ink);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  .btn:hover { background: #5fa012; color: #fff; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .status {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--gecko);
+    width: 0%;
+    transition: width 0.3s;
+    border-radius: 2px;
+  }
+  .stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    flex: 1;
+    min-width: 140px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--gecko);
+    display: block;
+  }
+  .stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  th {
+    background: var(--ink);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 10px 12px;
+    text-align: left;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:hover td { background: #f8f7f4; }
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .badge-new { background: #e8f5d0; color: #3a6010; border: 1px solid #78BE20; }
+  .badge-maybe { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+  .export-wrap { margin-top: 16px; }
+  .export-area {
+    width: 100%;
+    height: 200px;
+    background: #1a1a18;
+    color: #78BE20;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 10px;
+    resize: vertical;
+  }
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-row input {
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+    outline: none;
+    flex: 1;
+    min-width: 200px;
+  }
+  .filter-row input:focus { border-color: var(--gecko); }
+  .copy-btn {
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+  }
+  #results { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Ontario <em>Brewery</em> Finder</h1>
+<p class="subtitle">Finds missing breweries by comparing your Sheet data against OpenStreetMap — free, no API key needed</p>
+
+<!-- STEP 1 -->
+<div class="card">
+  <h2>Step 1 — Paste your existing brewery names from the Sheet</h2>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+    In your Google Sheet, select the <strong>name</strong> column, copy all values, and paste below. One name per line. This is used to detect duplicates.
+  </p>
+  <textarea id="existingNames" placeholder="3 Brewers&#10;5 Paddles Brewing Company&#10;555 Brewing Co.&#10;..."></textarea>
+</div>
+
+<!-- STEP 2 -->
+<div class="card">
+  <h2>Step 2 — Search OpenStreetMap for Ontario Breweries</h2>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+    Queries the free OpenStreetMap Overpass API for all breweries tagged in Ontario. No API key required.
+  </p>
+  <button class="btn" id="searchBtn" onclick="runSearch()">🔍 Find Missing Breweries</button>
+  <div class="progress" id="progressWrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="status" id="status"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <div class="stats">
+    <div class="stat"><span class="stat-num" id="statFound">0</span><span class="stat-label">Found on OpenStreetMap</span></div>
+    <div class="stat"><span class="stat-num" id="statExisting">0</span><span class="stat-label">Already in your Sheet</span></div>
+    <div class="stat"><span class="stat-num" id="statMissing">0</span><span class="stat-label">Potentially Missing</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Missing Breweries — Review & Select</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
+      <span class="badge badge-new">New</span> = likely missing &nbsp;
+      <span class="badge badge-maybe">Similar</span> = may already exist under a different name — verify before adding
+    </p>
+    <div class="filter-row">
+      <input type="text" id="tableSearch" placeholder="Filter by name or city…" oninput="filterTable()">
+      <label style="font-size:12px;color:var(--muted)">
+        <input type="checkbox" id="hideMatches" onchange="filterTable()"> Hide similar matches
+      </label>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th>
+            <th>Name</th>
+            <th>City</th>
+            <th>Address</th>
+            <th>Website</th>
+            <th>Lat</th>
+            <th>Lng</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="export-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">CSV Export — paste into your Sheet</span>
+        <button class="copy-btn" onclick="copyCSV()">Copy CSV</button>
+      </div>
+      <textarea class="export-area" id="csvOutput" readonly placeholder="Select rows above and click Export Selected…"></textarea>
+      <button class="btn" onclick="exportSelected()" style="margin-top:8px">Export Selected Rows →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allResults = [];
+let existingNames = [];
+
+function normalise(str) {
+  return str.toLowerCase()
+    .replace(/brewery|brewing|brewhouse|brewpub|craft beer|&|and|co\.|co|inc\.|inc|the|'s/gi, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+function similarity(a, b) {
+  const na = normalise(a), nb = normalise(b);
+  if (na === nb) return 1;
+  if (na.includes(nb) || nb.includes(na)) return 0.85;
+  // Simple character overlap
+  const setA = new Set(na.split('')), setB = new Set(nb.split(''));
+  const inter = [...setA].filter(c => setB.has(c)).length;
+  return inter / Math.max(setA.size, setB.size);
+}
+
+function matchStatus(name, existing) {
+  let best = 0;
+  for (const ex of existing) {
+    const s = similarity(name, ex);
+    if (s > best) best = s;
+  }
+  if (best >= 0.85) return 'existing';
+  if (best >= 0.5)  return 'maybe';
+  return 'new';
+}
+
+async function runSearch() {
+  const btn = document.getElementById('searchBtn');
+  const status = document.getElementById('status');
+  const progress = document.getElementById('progressWrap');
+  const bar = document.getElementById('progressBar');
+
+  existingNames = document.getElementById('existingNames').value
+    .split('\n').map(s => s.trim()).filter(Boolean);
+
+  btn.disabled = true;
+  progress.style.display = 'block';
+  bar.style.width = '10%';
+  status.textContent = 'Querying OpenStreetMap Overpass API for Ontario breweries…';
+
+  // Ontario bounding box: SW 41.6,-95.2 NE 56.9,-74.3
+  // Using craft=brewery AND amenity=pub with microbrewery tag
+  const query = `
+[out:json][timeout:60];
+(
+  nwr["craft"="brewery"](41.6,-95.2,56.9,-74.3);
+  nwr["amenity"="pub"]["microbrewery"="yes"](41.6,-95.2,56.9,-74.3);
+  nwr["brewery"](41.6,-95.2,56.9,-74.3);
+);
+out center tags;
+`.trim();
+
+  try {
+    bar.style.width = '30%';
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: query,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+
+    bar.style.width = '60%';
+    status.textContent = 'Parsing results…';
+
+    const data = await res.json();
+    bar.style.width = '80%';
+
+    const breweries = data.elements
+      .filter(el => el.tags && el.tags.name)
+      .map(el => {
+        const t = el.tags;
+        const lat = el.lat || (el.center && el.center.lat) || '';
+        const lng = el.lon || (el.center && el.center.lon) || '';
+        const city = t['addr:city'] || t['addr:town'] || t['addr:village'] || '';
+        const street = t['addr:street'] || '';
+        const housenumber = t['addr:housenumber'] || '';
+        const address = [housenumber, street, city].filter(Boolean).join(' ');
+        return {
+          name: t.name,
+          city,
+          address,
+          website: t.website || t['contact:website'] || '',
+          phone: t.phone || t['contact:phone'] || '',
+          lat,
+          lng,
+          status: matchStatus(t.name, existingNames)
+        };
+      })
+      .filter(b => b.status !== 'existing') // only show non-existing
+      .sort((a, b) => {
+        const order = { new: 0, maybe: 1 };
+        return (order[a.status] || 0) - (order[b.status] || 0);
+      });
+
+    allResults = breweries;
+    bar.style.width = '100%';
+    status.textContent = `Done — found ${data.elements.length} total, ${breweries.length} potentially missing.`;
+
+    renderTable(breweries);
+    document.getElementById('statFound').textContent = data.elements.length;
+    document.getElementById('statExisting').textContent = data.elements.length - breweries.length;
+    document.getElementById('statMissing').textContent = breweries.filter(b => b.status === 'new').length;
+    document.getElementById('results').style.display = 'block';
+
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message + ' — try again in a moment (Overpass rate limits occasionally)';
+    bar.style.width = '0%';
+  }
+
+  btn.disabled = false;
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = data.map((b, i) => `
+    <tr data-idx="${i}" class="${b.status === 'maybe' ? 'maybe-row' : ''}">
+      <td><input type="checkbox" class="row-check" data-idx="${i}"></td>
+      <td><strong>${b.name}</strong></td>
+      <td>${b.city}</td>
+      <td style="max-width:200px;word-break:break-word">${b.address}</td>
+      <td>${b.website ? `<a href="${b.website}" target="_blank" style="color:var(--gecko)">↗ Link</a>` : ''}</td>
+      <td style="font-family:monospace;font-size:10px">${b.lat}</td>
+      <td style="font-family:monospace;font-size:10px">${b.lng}</td>
+      <td><span class="badge badge-${b.status}">${b.status === 'new' ? 'New' : 'Similar'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('tableSearch').value.toLowerCase();
+  const hideMatches = document.getElementById('hideMatches').checked;
+  const filtered = allResults.filter(b => {
+    if (hideMatches && b.status === 'maybe') return false;
+    if (q && !b.name.toLowerCase().includes(q) && !b.city.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderTable(filtered);
+}
+
+function toggleAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+}
+
+function exportSelected() {
+  const checked = [...document.querySelectorAll('.row-check:checked')];
+  if (!checked.length) { alert('Select at least one row first.'); return; }
+
+  const header = 'name,city,address,website,phone,lat,lng,province,status';
+  const rows = checked.map(cb => {
+    const idx = parseInt(cb.dataset.idx);
+    // Find matching brewery in allResults by searching the table
+    const row = cb.closest('tr');
+    const cells = row.querySelectorAll('td');
+    const name = cells[1].textContent;
+    const b = allResults.find(x => x.name === name) || {};
+    return [
+      `"${(b.name||'').replace(/"/g,'""')}"`,
+      `"${(b.city||'').replace(/"/g,'""')}"`,
+      `"${(b.address||'').replace(/"/g,'""')}"`,
+      `"${(b.website||'').replace(/"/g,'""')}"`,
+      `"${(b.phone||'').replace(/"/g,'""')}"`,
+      b.lat || '',
+      b.lng || '',
+      'ON',
+      'active'
+    ].join(',');
+  });
+
+  document.getElementById('csvOutput').value = [header, ...rows].join('\n');
+}
+
+function copyCSV() {
+  const ta = document.getElementById('csvOutput');
+  if (!ta.value) { alert('Export rows first.'); return; }
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy CSV', 2000);
+  });
+}
+</script>
+</body>
+</html>

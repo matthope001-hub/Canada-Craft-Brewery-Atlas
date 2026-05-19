@@ -718,18 +718,6 @@
     margin-left: 6px;
   }
 
-  /* Untappd rating on card */
-  .untappd-rating {
-    font-size: 10px;
-    color: var(--gecko2);
-    font-weight: 700;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .untappd-rating .stars { color: #f0c040; letter-spacing: -1px; }
-
   /* ── FOOTER ──────────────────────────────── */
   footer {
     background: var(--ink);

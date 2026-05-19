@@ -257,11 +257,12 @@
     border-radius: 12px;
     padding: 20px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
     position: relative;
-    overflow: hidden;
-    animation: fadeUp 0.35s ease both;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
   }
   .card::before {
     content: '';
@@ -295,8 +296,8 @@
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 
   .card-header {
@@ -370,7 +371,7 @@
     font-weight: 500;
   }
 
-  .card-footer { display: flex; gap: 8px; align-items: center; }
+  .card-footer { display: flex; gap: 8px; align-items: center; margin-top: auto; padding-top: 12px; }
   .btn-directions {
     flex: 1;
     background: var(--gecko);

@@ -335,16 +335,15 @@ out center tags;
 
   try {
     bar.style.width = '30%';
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: query,
-      headers: { 'Content-Type': 'text/plain' }
-    });
+    const proxyUrl = `https://untappd-proxy.matt-hope001.workers.dev/?type=overpass&q=${encodeURIComponent(query)}`;
+    const res = await fetch(proxyUrl);
 
     bar.style.width = '60%';
     status.textContent = 'Parsing results…';
 
     const data = await res.json();
+    console.log('Worker response:', data);
+    console.log('Elements:', data.elements ? data.elements.length : 'NO ELEMENTS KEY');
     bar.style.width = '80%';
 
     const breweries = data.elements

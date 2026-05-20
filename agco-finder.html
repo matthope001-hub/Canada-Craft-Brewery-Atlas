@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGCO Missing Brewery Finder</title>
+<style>
+  :root { --gecko:#78BE20; --ink:#1A1A18; --bg:#F5F2EC; --surface:#fff; --muted:#6B6860; --border:#E0DDD5; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); padding:32px 24px; }
+  h1 { font-size:28px; font-weight:900; text-transform:uppercase; letter-spacing:-1px; margin-bottom:4px; }
+  h1 em { color:var(--gecko); font-style:normal; }
+  .subtitle { color:var(--muted); font-size:13px; margin-bottom:28px; }
+  .card { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:24px; margin-bottom:20px; }
+  .card h2 { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:10px; }
+  textarea { width:100%; height:100px; background:#f8f7f4; border:1.5px solid var(--border); border-radius:8px; padding:10px; font-family:monospace; font-size:11px; resize:vertical; outline:none; }
+  textarea:focus { border-color:var(--gecko); }
+  .btn { display:inline-block; background:var(--gecko); color:var(--ink); border:none; border-radius:8px; padding:10px 22px; font-family:inherit; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; cursor:pointer; margin-top:10px; }
+  .btn:hover { background:#5fa012; color:#fff; }
+  .stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .stat { background:var(--surface); border:1.5px solid var(--border); border-radius:10px; padding:14px 18px; flex:1; min-width:120px; text-align:center; }
+  .stat-num { font-size:26px; font-weight:900; color:var(--gecko); display:block; }
+  .stat-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { background:var(--ink); color:#fff; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:9px 12px; text-align:left; }
+  td { padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:hover td { background:#f8f7f4; }
+  .badge { display:inline-block; font-size:9px; font-weight:700; text-transform:uppercase; padding:2px 6px; border-radius:4px; }
+  .badge-new { background:#e8f5d0; color:#3a6010; border:1px solid #78BE20; }
+  .badge-maybe { background:#fff3cd; color:#856404; border:1px solid #ffc107; }
+  .filter-row { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+  .filter-row input { padding:7px 11px; border:1.5px solid var(--border); border-radius:7px; font-size:12px; outline:none; flex:1; min-width:180px; }
+  .filter-row input:focus { border-color:var(--gecko); }
+  .export-area { width:100%; height:180px; background:#1a1a18; color:#78BE20; border:none; border-radius:8px; padding:12px; font-family:monospace; font-size:10px; resize:vertical; }
+  .copy-btn { background:var(--ink); color:#fff; border:none; border-radius:7px; padding:7px 14px; font-size:11px; font-weight:700; text-transform:uppercase; cursor:pointer; }
+  #results { display:none; }
+  .file-label { display:inline-block; background:var(--bg); border:1.5px dashed var(--border); border-radius:8px; padding:16px 24px; cursor:pointer; font-size:12px; color:var(--muted); text-align:center; margin-bottom:10px; transition:border-color 0.15s; }
+  .file-label:hover { border-color:var(--gecko); color:var(--gecko); }
+  #fileInput { display:none; }
+</style>
+</head>
+<body>
+
+<h1>AGCO <em>Brewery</em> Finder</h1>
+<p class="subtitle">Compares official AGCO brewery data against your Sheet to find missing breweries — 100% offline, no API needed</p>
+
+<div class="card">
+  <h2>Step 1 — Paste your existing brewery names from your Sheet</h2>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Copy the <strong>name</strong> column from your Google Sheet and paste below. One name per line.</p>
+  <textarea id="existingNames" placeholder="3 Brewers&#10;Collective Arts Brewing&#10;Bellwoods Brewery&#10;..."></textarea>
+</div>
+
+<div class="card">
+  <h2>Step 2 — Load AGCO Data</h2>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Upload the <strong>OpenDataManufacturersLicences_En.csv</strong> file from AGCO, or use the pre-processed data below.</p>
+  <label class="file-label" for="fileInput">📂 Click to upload AGCO CSV file</label>
+  <input type="file" id="fileInput" accept=".csv" onchange="loadCSV(this)">
+  <div id="fileStatus" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+  <button class="btn" onclick="runComparison()" id="compareBtn">🔍 Find Missing Breweries</button>
+</div>
+
+<div id="results">
+  <div class="stats">
+    <div class="stat"><span class="stat-num" id="statAgco">0</span><span class="stat-label">Active in AGCO</span></div>
+    <div class="stat"><span class="stat-num" id="statMatched">0</span><span class="stat-label">Already in Sheet</span></div>
+    <div class="stat"><span class="stat-num" id="statMissing">0</span><span class="stat-label">Potentially Missing</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Missing Breweries</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+      <span class="badge badge-new">New</span> = not in your Sheet &nbsp;
+      <span class="badge badge-maybe">Similar</span> = may exist under a different name — verify before adding
+    </p>
+    <div class="filter-row">
+      <input type="text" id="tableSearch" placeholder="Filter by name or city…" oninput="filterTable()">
+      <label style="font-size:12px;color:var(--muted)"><input type="checkbox" id="hideMatches" onchange="filterTable()"> Hide similar matches</label>
+      <label style="font-size:12px;color:var(--muted)"><input type="checkbox" id="showAll" onchange="filterTable()"> Show all (including matched)</label>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th>
+            <th>Brewery Name</th>
+            <th>City</th>
+            <th>Address</th>
+            <th>Postal</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">CSV Export — paste into your Sheet</span>
+        <button class="copy-btn" onclick="copyCSV()">Copy CSV</button>
+      </div>
+      <textarea class="export-area" id="csvOutput" readonly placeholder="Select rows above then click Export Selected…"></textarea>
+      <button class="btn" onclick="exportSelected()" style="margin-top:8px">Export Selected →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let agcoData = [];
+let allResults = [];
+let existingNames = [];
+
+function normalise(str) {
+  return str.toLowerCase()
+    .replace(/brewery|brewing|brewhouse|brewpub|brasserie|craft beer|beer co|beer company|&|and|co\.|co|inc\.|inc|ltd\.|ltd|the|'s/gi, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+function bestMatch(name, existingList) {
+  const n = normalise(name);
+  let best = 0;
+  for (const ex of existingList) {
+    const e = normalise(ex);
+    if (n === e) return 1;
+    if (n.length > 3 && e.length > 3 && (n.includes(e) || e.includes(n))) return 0.85;
+    // Jaccard similarity on trigrams
+    const trig = s => new Set([...Array(Math.max(0,s.length-2))].map((_,i)=>s.slice(i,i+3)));
+    const tn = trig(n), te = trig(e);
+    if (tn.size && te.size) {
+      const inter = [...tn].filter(t=>te.has(t)).length;
+      const union = new Set([...tn,...te]).size;
+      const j = inter/union;
+      if (j > best) best = j;
+    }
+  }
+  return best;
+}
+
+function loadCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    parseAGCO(text);
+    document.getElementById('fileStatus').textContent = `✓ Loaded: ${file.name} (${agcoData.length} active breweries found)`;
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function parseAGCO(text) {
+  const lines = text.replace(/^\uFEFF/, '').split('\n');
+  const headers = parseCSVLine(lines[0]);
+  agcoData = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = parseCSVLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => row[h.trim()] = (vals[idx] || '').trim());
+    if (row['Licence Type'] === "Manufacturer's Licence - Brewery" && row['Licence Status'] === 'Active') {
+      const name = (row['Premises Name'] || row['Legal Entity Name'] || '').replace(/"/g,'').trim();
+      agcoData.push({
+        name: toTitleCase(name),
+        address: toTitleCase(row['Street Address'] || ''),
+        city: toTitleCase(row['City'] || ''),
+        postal: row['Postal Code'] || '',
+        province: 'ON',
+        licenceNum: row['Licence Number'] || ''
+      });
+    }
+  }
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQuotes = !inQuotes; }
+    else if (line[i] === ',' && !inQuotes) { result.push(cur); cur = ''; }
+    else cur += line[i];
+  }
+  result.push(cur);
+  return result;
+}
+
+function toTitleCase(str) {
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function runComparison() {
+  existingNames = document.getElementById('existingNames').value
+    .split('\n').map(s => s.trim()).filter(Boolean);
+
+  if (!agcoData.length) {
+    alert('Please upload the AGCO CSV file first.');
+    return;
+  }
+
+  allResults = agcoData.map(b => {
+    const score = bestMatch(b.name, existingNames);
+    return { ...b, score, matchStatus: score >= 0.85 ? 'matched' : score >= 0.45 ? 'maybe' : 'new' };
+  });
+
+  const missing = allResults.filter(b => b.matchStatus !== 'matched');
+  const matched = allResults.filter(b => b.matchStatus === 'matched');
+
+  document.getElementById('statAgco').textContent = agcoData.length;
+  document.getElementById('statMatched').textContent = matched.length;
+  document.getElementById('statMissing').textContent = missing.filter(b => b.matchStatus === 'new').length;
+  document.getElementById('results').style.display = 'block';
+
+  filterTable();
+}
+
+function filterTable() {
+  const q = document.getElementById('tableSearch').value.toLowerCase();
+  const hideMatches = document.getElementById('hideMatches').checked;
+  const showAll = document.getElementById('showAll').checked;
+
+  let filtered = allResults.filter(b => {
+    if (!showAll && b.matchStatus === 'matched') return false;
+    if (hideMatches && b.matchStatus === 'maybe') return false;
+    if (q && !b.name.toLowerCase().includes(q) && !b.city.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b) => {
+    const order = {new:0,maybe:1,matched:2};
+    return (order[a.matchStatus]||0) - (order[b.matchStatus]||0);
+  });
+
+  document.getElementById('resultsBody').innerHTML = filtered.map((b,i) => `
+    <tr>
+      <td><input type="checkbox" class="row-check" data-name="${b.name.replace(/"/g,'&quot;')}"></td>
+      <td><strong>${b.name}</strong></td>
+      <td>${b.city}</td>
+      <td>${b.address}</td>
+      <td style="font-family:monospace;font-size:10px">${b.postal}</td>
+      <td><span class="badge badge-${b.matchStatus === 'matched' ? 'maybe' : b.matchStatus}">${b.matchStatus === 'new' ? 'New' : b.matchStatus === 'maybe' ? 'Similar' : 'Matched'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function toggleAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+}
+
+function exportSelected() {
+  const checked = [...document.querySelectorAll('.row-check:checked')];
+  if (!checked.length) { alert('Select at least one row.'); return; }
+  const header = 'name,city,address,postal,province,status';
+  const rows = checked.map(cb => {
+    const name = cb.dataset.name;
+    const b = allResults.find(x => x.name === name) || {};
+    return [
+      `"${(b.name||'').replace(/"/g,'""')}"`,
+      `"${(b.city||'').replace(/"/g,'""')}"`,
+      `"${(b.address||'').replace(/"/g,'""')}"`,
+      `"${(b.postal||'').replace(/"/g,'""')}"`,
+      'ON','active'
+    ].join(',');
+  });
+  document.getElementById('csvOutput').value = [header,...rows].join('\n');
+}
+
+function copyCSV() {
+  const ta = document.getElementById('csvOutput');
+  if (!ta.value) { alert('Export rows first.'); return; }
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy CSV', 2000);
+  });
+}
+
+// Pre-load AGCO data from embedded CSV if available
+window.onload = () => {
+  // Try to auto-load if user already has the file
+  document.getElementById('fileStatus').textContent = 'Upload the AGCO CSV above to begin.';
+};
+</script>
+</body>
+</html>

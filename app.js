@@ -150,23 +150,43 @@ async function init() {
       cols.forEach((col, i) => {
         const cell = row.c && row.c[i];
         if (!cell || cell.v === null || cell.v === undefined) { obj[col] = ''; return; }
-        // Use formatted value for dates (cell.f), raw value otherwise
         const isDate = typeof cell.v === 'string' && cell.v.startsWith('Date(');
         obj[col] = isDate ? (cell.f || '') : cell.v;
       });
-      ['taproom','patio','kitchen','pet','tours','accessible','ocb_member'].forEach(k => {
-        obj[k] = obj[k] === true || obj[k] === 'TRUE' || obj[k] === 'true' || obj[k] === 1;
-      });
-      obj.lat = parseFloat(obj.lat) || 0;
-      obj.lng = parseFloat(obj.lng) || 0;
-      return obj;
+      
+      // MAP YOUR COLUMN NAMES TO WHAT THE CODE EXPECTS
+      const mapped = {
+        id: obj.id || `can_${Math.random().toString(36).substr(2, 9)}`,
+        name: obj.brewery_name || obj['brewery name'],
+        province: obj.province,
+        city: obj.city,
+        address: obj.street_address || obj['street address'],
+        postal: obj.postal_code || obj['postal code'],
+        phone: obj.phone,
+        website: obj.website,
+        instagram: obj.instagram,
+        facebook: obj.facebook,
+        email: obj.email,
+        founded: obj.founded,
+        status: obj.status,
+        data_source: obj.data_source || obj['data source'],
+        lat: parseFloat(obj.lat) || 0,
+        lng: parseFloat(obj.lng) || 0,
+        taproom: false,
+        patio: false,
+        kitchen: false,
+        pet: false,
+        tours: false,
+        accessible: false,
+        ocb_member: false,
+        styles: '',
+        type: 'micro',
+        region: obj.city
+      };
+      
+      return mapped;
     });
-    allBreweries = rows.filter(b => b.name && (!b.status || b.status === 'active'));
-    allBreweries.forEach(b => { if (b.jeep_post) visitedSet.add(b.id); });
-  } catch(e) {
-    console.warn('Sheet load failed — using sample data:', e);
-    allBreweries = SAMPLE_DATA;
-  }
+    allBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
 
   // ── FETCH US BREWERIES FROM OPEN BREWERY DB ────────────
   document.getElementById('breweryGrid').innerHTML =

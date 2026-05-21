@@ -33,24 +33,17 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 // ── DASHBOARD UPDATE ───────────────────────────────────
 function updateDashboard() {
-  // Visited breweries in Sheet order (jeep_post rows come first since Sheet is chronological)
   const visited = allBreweries.filter(b => b.jeep_post && b.lat && b.lng);
-
-  // Total km: chain distance between consecutive visited stops
   let totalKm = 0;
   for (let i = 1; i < visited.length; i++) {
     totalKm += haversine(visited[i-1].lat, visited[i-1].lng, visited[i].lat, visited[i].lng);
   }
-
   const provinces = new Set(visited.map(b => b.province).filter(Boolean));
   const avgKm = visited.length > 1 ? Math.round(totalKm / (visited.length - 1)) : 0;
-
   document.getElementById('dashVisited').textContent   = visited.length;
   document.getElementById('dashKm').textContent        = Math.round(totalKm).toLocaleString();
   document.getElementById('dashProvinces').textContent = provinces.size;
   document.getElementById('dashAvgKm').textContent     = visited.length > 1 ? avgKm : '—';
-
-  // Trail route dots
   const trailEl = document.getElementById('trailList');
   if (!visited.length) {
     trailEl.innerHTML = '<span class="trail-empty">No visited breweries yet — add a jeep_post URL to your Sheet to start tracking.</span>';
@@ -136,7 +129,7 @@ let allBreweries = [];
 let activeFeats  = new Set();
 
 // ─────────────────────────────────────────────────────
-// INIT
+// INIT - FIXED FOR "cleaned" TAB
 // ─────────────────────────────────────────────────────
 async function init() {
   try {
@@ -144,34 +137,36 @@ async function init() {
     const res  = await fetch(url);
     const text = await res.text();
     const json = JSON.parse(text.substring(47).slice(0, -2));
-    const cols = json.table.cols.map(c => c.label.toLowerCase().trim());
+    const cols = json.table.cols.map(c => c.label.toLowerCase().trim().replace(/ /g,'_'));
+    
     const rows = json.table.rows.map(row => {
       const obj = {};
       cols.forEach((col, i) => {
         const cell = row.c && row.c[i];
         if (!cell || cell.v === null || cell.v === undefined) { obj[col] = ''; return; }
-        const isDate = typeof cell.v === 'string' && cell.v.startsWith('Date(');
-        obj[col] = isDate ? (cell.f || '') : cell.v;
+        obj[col] = cell.v;
       });
       
-      // MAP YOUR COLUMN NAMES TO WHAT THE CODE EXPECTS
-      const mapped = {
+      // MAP YOUR COLUMN NAMES TO EXPECTED FORMAT
+      return {
         id: obj.id || `can_${Math.random().toString(36).substr(2, 9)}`,
-        name: obj.brewery_name || obj['brewery name'],
+        name: obj.brewery_name || obj.name,
         province: obj.province,
         city: obj.city,
-        address: obj.street_address || obj['street address'],
-        postal: obj.postal_code || obj['postal code'],
-        phone: obj.phone,
-        website: obj.website,
-        instagram: obj.instagram,
-        facebook: obj.facebook,
-        email: obj.email,
-        founded: obj.founded,
-        status: obj.status,
-        data_source: obj.data_source || obj['data source'],
+        region: obj.city,
+        type: 'micro',
         lat: parseFloat(obj.lat) || 0,
         lng: parseFloat(obj.lng) || 0,
+        address: obj.street_address || obj.address || '',
+        postal: obj.postal_code || obj.postal || '',
+        phone: obj.phone || '',
+        website: obj.website || '',
+        instagram: obj.instagram || '',
+        facebook: obj.facebook || '',
+        email: obj.email || '',
+        founded: obj.founded || '',
+        status: obj.status || 'active',
+        data_source: obj.data_source || '',
         taproom: false,
         patio: false,
         kitchen: false,
@@ -179,14 +174,16 @@ async function init() {
         tours: false,
         accessible: false,
         ocb_member: false,
-        styles: '',
-        type: 'micro',
-        region: obj.city
+        styles: ''
       };
-      
-      return mapped;
     });
+    
     allBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
+    console.log(`Loaded ${allBreweries.length} Canadian breweries from cleaned tab`);
+  } catch(e) {
+    console.warn('Sheet load failed — using sample data:', e);
+    allBreweries = SAMPLE_DATA;
+  }
 
   // ── FETCH US BREWERIES FROM OPEN BREWERY DB ────────────
   document.getElementById('breweryGrid').innerHTML =
@@ -196,7 +193,6 @@ async function init() {
     const stateCodes = Object.keys(US_STATES);
     const fetches = stateCodes.map(async code => {
       const stateName = US_STATES[code];
-      // Fetch up to 200 per state (API max per_page=200)
       const pages = [1, 2, 3];
       const results = await Promise.all(pages.map(p =>
         fetch(`https://api.openbrewerydb.org/v1/breweries?by_state=${stateName}&per_page=200&page=${p}&by_type=micro,brewpub,nano,regional,large,planning,contract,proprietor`)
@@ -510,7 +506,7 @@ function setView(view) {
 }
 
 function initMap() {
-  if (map) return; // already initialised
+  if (map) return;
   map = L.map('mapView').setView([44.5, -76.5], 5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO',
@@ -521,13 +517,9 @@ function initMap() {
 
 function renderMap() {
   if (!map || typeof L === 'undefined') return;
-
-  // Clear existing markers
   mapMarkers.forEach(m => map.removeLayer(m));
   mapMarkers = [];
-
   const filtered = getFiltered().filter(b => b.lat && b.lng);
-
   filtered.forEach(b => {
     const color     = PROV_COLORS[b.province] || '#78BE20';
     const isVisited = visitedSet.has(b.id);
@@ -545,7 +537,6 @@ function renderMap() {
       iconSize: [isVisited ? 14 : 10, isVisited ? 14 : 10],
       iconAnchor: [isVisited ? 7 : 5, isVisited ? 7 : 5],
     });
-
     const marker = L.marker([b.lat, b.lng], { icon })
       .addTo(map)
       .bindPopup(`
@@ -555,25 +546,19 @@ function renderMap() {
         <button class="map-popup-btn" onclick="openModal('${b.id}')">Details</button>
         <a class="map-popup-btn" href="https://maps.google.com/?q=${b.lat},${b.lng}" target="_blank">Directions</a>
       `, { maxWidth: 220 });
-
     mapMarkers.push(marker);
   });
-
-  // Fit bounds to visible markers
   if (filtered.length > 0) {
     const bounds = L.latLngBounds(filtered.map(b => [b.lat, b.lng]));
     map.fitBounds(bounds, { padding: [40, 40] });
   }
 }
 
-// When map is active, renderMap() is called directly from setView() and filterBreweries()
-// No render override needed — this was causing infinite recursion
-
 // ═══════════════════════════════════════════════════════
 // ROUTE PLANNER
 // ═══════════════════════════════════════════════════════
 let routeActive = false;
-let routeLine   = null; // [fromLat,fromLng] → [toLat,toLng]
+let routeLine   = null;
 
 async function geocode(place) {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&limit=1`;
@@ -583,9 +568,7 @@ async function geocode(place) {
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
 }
 
-// Perpendicular distance from point P to line segment A→B (in km)
 function distToSegment(pLat, pLng, aLat, aLng, bLat, bLng) {
-  // Convert to flat coords (good enough for < 2000km)
   const dx = bLng - aLng, dy = bLat - aLat;
   const lenSq = dx*dx + dy*dy;
   if (lenSq === 0) return haversine(pLat, pLng, aLat, aLng);
@@ -598,23 +581,16 @@ async function planRoute() {
   const fromStr = document.getElementById('routeFrom').value.trim();
   const toStr   = document.getElementById('routeTo').value.trim();
   if (!fromStr || !toStr) { alert('Please enter both a start and end city.'); return; }
-
   const status = document.getElementById('routeStatus');
   status.textContent = 'Geocoding…';
-
   try {
     const [from, to] = await Promise.all([geocode(fromStr), geocode(toStr)]);
     routeLine = { from, to };
     routeActive = true;
-
     const totalKm = Math.round(haversine(from.lat, from.lng, to.lat, to.lng));
     status.innerHTML = `${from.name} → ${to.name} <span class="route-km-badge">${totalKm.toLocaleString()} km straight-line</span>`;
     document.getElementById('routeClearBtn').style.display = 'inline-block';
-
-    // Sort breweries by distance from route (closest first), max 100km corridor
     render();
-
-    // If map is visible, draw route line
     if (currentView === 'map' && map && typeof L !== 'undefined') {
       if (window._routePolyline) map.removeLayer(window._routePolyline);
       window._routePolyline = L.polyline(
@@ -636,16 +612,5 @@ function clearRoute() {
   if (window._routePolyline && map) map.removeLayer(window._routePolyline);
   render();
 }
-
-// Route sorting is handled inside getFiltered directly — no override needed
-
-
-// ── START ──────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.getElementById('modalOverlay').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-});
 
 init();

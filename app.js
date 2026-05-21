@@ -59,21 +59,99 @@ function updateDashboard() {
 
 // ── VISITED STATE ──────────────────────────────────────
 const visitedSet = new Set(JSON.parse(localStorage.getItem('visitedBreweries') || '[]'));
-function saveVisited() { localStorage.setItem('visitedBreweries', JSON.stringify([...visitedSet])); }
-function toggleVisited(id, event) {
+
+function saveVisited() { 
+  localStorage.setItem('visitedBreweries', JSON.stringify([...visitedSet])); 
+}
+
+async function toggleVisited(id, event) {
   event.stopPropagation();
-  visitedSet.has(id) ? visitedSet.delete(id) : visitedSet.add(id);
+  const isNowVisited = !visitedSet.has(id);
+  
+  if (isNowVisited) {
+    visitedSet.add(id);
+  } else {
+    visitedSet.delete(id);
+  }
+  
   saveVisited();
   updateVisitedStat();
   render();
+  
   const btn = document.getElementById('visitedBtn');
   if (btn) {
-    btn.textContent = visitedSet.has(id) ? '✅ Visited!' : '🚙 Mark Visited';
-    btn.classList.toggle('marked', visitedSet.has(id));
+    btn.textContent = isNowVisited ? '✅ Visited!' : '🚙 Mark Visited';
+    btn.classList.toggle('marked', isNowVisited);
+  }
+  
+  // Sync to Google Sheet
+  await syncVisitedToSheet(id, isNowVisited);
+}
+
+async function syncVisitedToSheet(breweryId, visited) {
+  const brewery = allBreweries.find(b => b.id === breweryId);
+  if (!brewery) return;
+  
+  try {
+    // Find the brewery in the sheet and update the Visited column
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=cleaned`;
+    const response = await fetch(sheetUrl);
+    const text = await response.text();
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+    
+    // Find brewery row by name
+    const rows = json.table.rows;
+    let rowIndex = -1;
+    
+    for (let i = 0; i < rows.length; i++) {
+      const rowName = rows[i].c[1]?.v; // Brewery_Name column
+      if (rowName && rowName.toLowerCase() === brewery.name.toLowerCase()) {
+        rowIndex = i + 2; // +2 because row 1 is headers, array is 0-indexed
+        break;
+      }
+    }
+    
+    if (rowIndex > 0) {
+      console.log(`Brewery "${brewery.name}" found at row ${rowIndex}. Visited: ${visited}`);
+      // Note: Direct sheet updates require Apps Script or Sheets API
+      // For now, we'll save to localStorage and show a sync button
+      updateSyncStatus(visited ? 'marked' : 'unmarked');
+    }
+  } catch (error) {
+    console.error('Error syncing to sheet:', error);
   }
 }
+
+function updateSyncStatus(status) {
+  // Show a small notification that changes were saved locally
+  const notification = document.createElement('div');
+  notification.className = 'sync-notification';
+  notification.textContent = status === 'marked' ? '✓ Marked visited (saved locally)' : '✓ Unmarked (saved locally)';
+  document.body.appendChild(notification);
+  
+  setTimeout(() => notification.remove(), 2000);
+}
+
 function updateVisitedStat() {
   document.getElementById('statVisited').textContent = visitedSet.size;
+}
+
+// Export visited breweries as CSV for manual upload to sheet
+function exportVisitedCSV() {
+  const visited = allBreweries.filter(b => visitedSet.has(b.id));
+  
+  let csv = 'Brewery Name,City,Province,Visit Date,Visited\n';
+  visited.forEach(b => {
+    const visitDate = new Date().toISOString().split('T')[0];
+    csv += `"${b.name}","${b.city}","${b.province}","${visitDate}","TRUE"\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `visited_breweries_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
 }
 
 // ─────────────────────────────────────────────────────
@@ -167,7 +245,8 @@ async function init() {
         founded: obj.founded || '',
         status: obj.status || 'active',
         data_source: obj.data_source || '',
-        jeep_post: '', // Not in cleaned tab, managed by localStorage instead
+        visited: obj.visited === 'TRUE' || obj.visited === true || obj.visited === 'Yes',
+        visit_date: obj.visit_date || '',
         taproom: false,
         patio: false,
         kitchen: false,
@@ -181,8 +260,10 @@ async function init() {
     
     allBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
     
-    // Don't auto-mark visited from jeep_post since cleaned tab doesn't have it
-    // visitedSet is managed entirely through localStorage/manual marking
+    // Load visited status from sheet
+    allBreweries.forEach(b => { 
+      if (b.visited) visitedSet.add(b.id); 
+    });
     
     console.log(`Loaded ${allBreweries.length} Canadian breweries from cleaned tab`);
   } catch(e) {

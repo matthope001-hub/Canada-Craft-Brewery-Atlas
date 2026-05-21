@@ -167,6 +167,7 @@ async function init() {
         founded: obj.founded || '',
         status: obj.status || 'active',
         data_source: obj.data_source || '',
+        jeep_post: '', // Not in cleaned tab, managed by localStorage instead
         taproom: false,
         patio: false,
         kitchen: false,
@@ -179,6 +180,10 @@ async function init() {
     });
     
     allBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
+    
+    // Don't auto-mark visited from jeep_post since cleaned tab doesn't have it
+    // visitedSet is managed entirely through localStorage/manual marking
+    
     console.log(`Loaded ${allBreweries.length} Canadian breweries from cleaned tab`);
   } catch(e) {
     console.warn('Sheet load failed — using sample data:', e);

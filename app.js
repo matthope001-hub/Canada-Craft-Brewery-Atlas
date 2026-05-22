@@ -289,11 +289,20 @@ async function init() {
     allBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
     
     // Load visited status from sheet
+    let visitedFromSheet = 0;
     allBreweries.forEach(b => { 
-      if (b.visited) visitedSet.add(b.id); 
+      if (b.visited) {
+        visitedSet.add(b.id);
+        visitedFromSheet++;
+      }
     });
     
     console.log(`Loaded ${allBreweries.length} Canadian breweries from cleaned tab`);
+    console.log(`Found ${visitedFromSheet} breweries marked as Visited=TRUE in sheet`);
+    console.log(`Total in visitedSet: ${visitedSet.size}`);
+    
+    // Update dashboard with visited data from sheet
+    updateDashboard();
     
     // Load visited breweries from cloud (syncs across devices)
     await loadVisitedFromCloud();

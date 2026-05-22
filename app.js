@@ -790,6 +790,7 @@ function showVisitedList() {
     });
   
   console.log('Showing visited list with', visited.length, 'breweries');
+  console.log('visitedSet contains:', [...visitedSet]);
   
   if (visited.length === 0) {
     document.getElementById('visitedListContent').innerHTML = 
@@ -818,13 +819,27 @@ function showVisitedList() {
           </h3>`;
       }
       
+      // Format visit date
+      let visitDate = '';
+      if (b.visit_date) {
+        const dateStr = b.visit_date;
+        if (dateStr.includes('-')) {
+          const parts = dateStr.split('-');
+          if (parts.length === 3) {
+            visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(2)}`;
+          }
+        } else {
+          visitDate = dateStr;
+        }
+      }
+      
       html += `
         <div style="padding:12px;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.2s;" 
-             onclick="openModal('${b.id}'); closeVisitedList();"
+             onclick="openModal('${b.id}'); document.getElementById('visitedListOverlay').style.display='none';"
              onmouseover="this.style.background='#f5f5f5'" 
              onmouseout="this.style.background='white'">
           <div style="font-weight:600;color:#333;margin-bottom:4px;">${b.name}</div>
-          <div style="font-size:14px;color:#666;">${b.city}${b.visit_date ? ` • Visited: ${b.visit_date}` : ''}</div>
+          <div style="font-size:14px;color:#666;">${b.city}${visitDate ? ` • Visited: ${visitDate}` : ''}</div>
         </div>`;
     });
     
@@ -839,9 +854,7 @@ function showVisitedList() {
   
   const overlay = document.getElementById('visitedListOverlay');
   overlay.style.display = 'flex';
-  overlay.style.alignItems = 'center';
-  overlay.style.justifyContent = 'center';
-  console.log('Modal should now be visible');
+  console.log('Modal display set to flex, should be visible now');
 }
 
 function closeVisitedList(event) {

@@ -3,6 +3,11 @@
 // ═══════════════════════════════════════════════════════
 const SHEET_ID = '1071nhgKo4kStR5KkikpWEq8LKKDnMqE7FOhp3wZv9dw';
 
+// IMPORTANT: Replace this with your deployed Apps Script Web App URL
+// Instructions in the README
+const API_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const USE_CLOUD_SYNC = false; // Set to true after deploying the web app
+
 // Province/State colors
 const PROV_COLORS = {
   // Canada
@@ -66,6 +71,9 @@ function saveVisited() {
 
 async function toggleVisited(id, event) {
   event.stopPropagation();
+  const brewery = allBreweries.find(b => b.id === id);
+  if (!brewery) return;
+  
   const isNowVisited = !visitedSet.has(id);
   
   if (isNowVisited) {
@@ -84,74 +92,103 @@ async function toggleVisited(id, event) {
     btn.classList.toggle('marked', isNowVisited);
   }
   
-  // Sync to Google Sheet
-  await syncVisitedToSheet(id, isNowVisited);
+  // Sync to cloud if enabled
+  if (USE_CLOUD_SYNC && API_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    await syncVisitedToCloud(brewery.name, isNowVisited);
+  } else {
+    updateSyncStatus(isNowVisited ? 'marked-local' : 'unmarked-local');
+  }
 }
 
-async function syncVisitedToSheet(breweryId, visited) {
-  const brewery = allBreweries.find(b => b.id === breweryId);
-  if (!brewery) return;
+async function syncVisitedToCloud(breweryName, visited) {
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Apps Script requires this
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        brewery: breweryName,
+        visited: visited
+      })
+    });
+    
+    // no-cors means we can't read the response, but the request went through
+    updateSyncStatus(visited ? 'marked-cloud' : 'unmarked-cloud');
+    console.log(`✓ Synced to cloud: ${breweryName} = ${visited}`);
+    
+  } catch (error) {
+    console.error('Error syncing to cloud:', error);
+    updateSyncStatus('error');
+  }
+}
+
+async function loadVisitedFromCloud() {
+  if (!USE_CLOUD_SYNC || API_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    console.log('Cloud sync disabled - using localStorage only');
+    return;
+  }
   
   try {
-    // Find the brewery in the sheet and update the Visited column
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=cleaned`;
-    const response = await fetch(sheetUrl);
-    const text = await response.text();
-    const json = JSON.parse(text.substring(47).slice(0, -2));
+    const response = await fetch(`${API_URL}?action=get_visited`);
+    const data = await response.json();
     
-    // Find brewery row by name
-    const rows = json.table.rows;
-    let rowIndex = -1;
-    
-    for (let i = 0; i < rows.length; i++) {
-      const rowName = rows[i].c[1]?.v; // Brewery_Name column
-      if (rowName && rowName.toLowerCase() === brewery.name.toLowerCase()) {
-        rowIndex = i + 2; // +2 because row 1 is headers, array is 0-indexed
-        break;
-      }
-    }
-    
-    if (rowIndex > 0) {
-      console.log(`Brewery "${brewery.name}" found at row ${rowIndex}. Visited: ${visited}`);
-      // Note: Direct sheet updates require Apps Script or Sheets API
-      // For now, we'll save to localStorage and show a sync button
-      updateSyncStatus(visited ? 'marked' : 'unmarked');
+    if (data.success && data.visited) {
+      console.log(`✓ Loaded ${data.visited.length} visited breweries from cloud`);
+      
+      // Merge cloud data with localStorage
+      data.visited.forEach(v => {
+        const brewery = allBreweries.find(b => b.name === v.name);
+        if (brewery) {
+          visitedSet.add(brewery.id);
+        }
+      });
+      
+      saveVisited();
+      updateVisitedStat();
+      render();
     }
   } catch (error) {
-    console.error('Error syncing to sheet:', error);
+    console.error('Error loading from cloud:', error);
   }
 }
 
 function updateSyncStatus(status) {
-  // Show a small notification that changes were saved locally
+  const messages = {
+    'marked-local': '✓ Marked visited (saved locally)',
+    'unmarked-local': '✓ Unmarked (saved locally)', 
+    'marked-cloud': '✓ Marked visited (synced to cloud)',
+    'unmarked-cloud': '✓ Unmarked (synced to cloud)',
+    'error': '⚠️ Sync error - saved locally only'
+  };
+  
   const notification = document.createElement('div');
   notification.className = 'sync-notification';
-  notification.textContent = status === 'marked' ? '✓ Marked visited (saved locally)' : '✓ Unmarked (saved locally)';
-  document.body.appendChild(notification);
+  notification.textContent = messages[status] || status;
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: ${status.includes('cloud') ? '#28a745' : '#6c757d'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 10000;
+    font-size: 14px;
+    animation: slideIn 0.3s ease-out;
+  `;
   
-  setTimeout(() => notification.remove(), 2000);
+  document.body.appendChild(notification);
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
+  }, 2000);
 }
 
 function updateVisitedStat() {
   document.getElementById('statVisited').textContent = visitedSet.size;
-}
-
-// Export visited breweries as CSV for manual upload to sheet
-function exportVisitedCSV() {
-  const visited = allBreweries.filter(b => visitedSet.has(b.id));
-  
-  let csv = 'Brewery Name,City,Province,Visit Date,Visited\n';
-  visited.forEach(b => {
-    const visitDate = new Date().toISOString().split('T')[0];
-    csv += `"${b.name}","${b.city}","${b.province}","${visitDate}","TRUE"\n`;
-  });
-  
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `visited_breweries_${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
 }
 
 // ─────────────────────────────────────────────────────
@@ -266,6 +303,10 @@ async function init() {
     });
     
     console.log(`Loaded ${allBreweries.length} Canadian breweries from cleaned tab`);
+    
+    // Load visited breweries from cloud (syncs across devices)
+    await loadVisitedFromCloud();
+    
   } catch(e) {
     console.warn('Sheet load failed — using sample data:', e);
     allBreweries = SAMPLE_DATA;

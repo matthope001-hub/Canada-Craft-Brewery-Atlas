@@ -754,4 +754,71 @@ function clearRoute() {
   render();
 }
 
+// ── VISITED LIST ────────────────────────────────────────
+function showVisitedList() {
+  const visited = allBreweries
+    .filter(b => visitedSet.has(b.id))
+    .sort((a, b) => {
+      // Sort by province first, then by name
+      if (a.province !== b.province) {
+        return a.province.localeCompare(b.province);
+      }
+      return a.name.localeCompare(b.name);
+    });
+  
+  if (visited.length === 0) {
+    document.getElementById('visitedListContent').innerHTML = 
+      '<p style="text-align:center;color:#999;padding:40px;">No visited breweries yet. Start marking breweries as visited to build your list!</p>';
+  } else {
+    let html = '';
+    let currentProvince = '';
+    
+    visited.forEach(b => {
+      if (b.province !== currentProvince) {
+        if (currentProvince !== '') html += '</div>'; // Close previous province section
+        currentProvince = b.province;
+        
+        const provinceNames = {
+          'ON': 'Ontario', 'BC': 'British Columbia', 'AB': 'Alberta', 'QC': 'Quebec',
+          'MB': 'Manitoba', 'SK': 'Saskatchewan', 'NS': 'Nova Scotia', 'NB': 'New Brunswick',
+          'PE': 'Prince Edward Island', 'NL': 'Newfoundland & Labrador',
+          'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio', 'KY': 'Kentucky',
+          'TN': 'Tennessee', 'WV': 'West Virginia', 'VA': 'Virginia', 'NC': 'North Carolina',
+          'SC': 'South Carolina', 'GA': 'Georgia', 'FL': 'Florida'
+        };
+        
+        html += `<div style="margin-bottom:30px;">
+          <h3 style="color:#78BE20;border-bottom:2px solid #78BE20;padding-bottom:8px;margin-bottom:16px;">
+            ${provinceNames[currentProvince] || currentProvince}
+          </h3>`;
+      }
+      
+      html += `
+        <div style="padding:12px;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.2s;" 
+             onclick="openModal('${b.id}'); closeVisitedList();"
+             onmouseover="this.style.background='#f5f5f5'" 
+             onmouseout="this.style.background='white'">
+          <div style="font-weight:600;color:#333;margin-bottom:4px;">${b.name}</div>
+          <div style="font-size:14px;color:#666;">${b.city}${b.visit_date ? ` • Visited: ${b.visit_date}` : ''}</div>
+        </div>`;
+    });
+    
+    html += '</div>'; // Close last province section
+    
+    html += `<div style="margin-top:30px;padding-top:20px;border-top:2px solid #eee;text-align:center;color:#999;">
+      <strong>${visited.length}</strong> ${visited.length === 1 ? 'brewery' : 'breweries'} visited
+    </div>`;
+    
+    document.getElementById('visitedListContent').innerHTML = html;
+  }
+  
+  document.getElementById('visitedListOverlay').style.display = 'flex';
+}
+
+function closeVisitedList(event) {
+  if (!event || event.target.id === 'visitedListOverlay') {
+    document.getElementById('visitedListOverlay').style.display = 'none';
+  }
+}
+
 init();

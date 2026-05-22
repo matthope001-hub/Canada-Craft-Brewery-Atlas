@@ -37,7 +37,7 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 // ── DASHBOARD UPDATE ───────────────────────────────────
 function updateDashboard() {
-  const visited = allBreweries.filter(b => b.jeep_post && b.lat && b.lng);
+  const visited = allBreweries.filter(b => visitedSet.has(b.id) && b.lat && b.lng);
   let totalKm = 0;
   for (let i = 1; i < visited.length; i++) {
     totalKm += haversine(visited[i-1].lat, visited[i-1].lng, visited[i].lat, visited[i].lng);
@@ -50,7 +50,7 @@ function updateDashboard() {
   document.getElementById('dashAvgKm').textContent     = visited.length > 1 ? avgKm : '—';
   const trailEl = document.getElementById('trailList');
   if (!visited.length) {
-    trailEl.innerHTML = '<span class="trail-empty">No visited breweries yet — add a jeep_post URL to your Sheet to start tracking.</span>';
+    trailEl.innerHTML = '<span class="trail-empty">No visited breweries yet — mark some breweries as visited to start tracking your trail!</span>';
     return;
   }
   trailEl.innerHTML = visited.map((b, i) => `
@@ -522,7 +522,6 @@ function openModal(id) {
     <div class="modal-section">
       <div class="modal-section-label">Address</div>
       <div style="font-size:13px;color:var(--ink)">${b.address}, ${b.city}, ${b.province} ${b.postal}</div>
-      <div style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;color:#2A7BE8;margin-top:4px">📍 ${b.lat}, ${b.lng}</div>
       ${b.phone ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">📞 ${b.phone}</div>` : ''}
     </div>
 

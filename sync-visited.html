@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sync Visited Breweries to Sheet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #78BE20;
+      margin-top: 0;
+    }
+    .step {
+      background: #f9f9f9;
+      padding: 15px;
+      margin: 15px 0;
+      border-left: 4px solid #78BE20;
+    }
+    button {
+      background: #78BE20;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #6AA019;
+    }
+    button.secondary {
+      background: #666;
+    }
+    button.secondary:hover {
+      background: #555;
+    }
+    #output {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .brewery-item {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .success {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .error {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .info {
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 15px 0;
+      border-left: 4px solid #2196F3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚙 Sync Visited Breweries to Google Sheet</h1>
+    
+    <div class="info">
+      <strong>📍 Current Status:</strong>
+      <div id="localStorageStatus">Checking localStorage...</div>
+    </div>
+
+    <div class="step">
+      <h3>Step 1: Check Your Visited Breweries</h3>
+      <p>This will read the visited breweries from your browser's localStorage.</p>
+      <button onclick="checkLocalStorage()">🔍 Check Visited Breweries</button>
+    </div>
+
+    <div class="step">
+      <h3>Step 2: Download CSV for Google Sheet</h3>
+      <p>Download a CSV file with all your visited breweries. You'll import this into your "cleaned" tab.</p>
+      <button onclick="downloadCSV()" id="downloadBtn" disabled>📥 Download Visited Breweries CSV</button>
+    </div>
+
+    <div class="step">
+      <h3>Step 3: Import to Google Sheet</h3>
+      <p><strong>In your Google Sheet:</strong></p>
+      <ol>
+        <li>Open the "cleaned" tab</li>
+        <li>Make sure you have "Visited" and "Visit_Date" columns (run "🚙 Add Visited Columns" from menu if not)</li>
+        <li>Click <strong>File → Import → Upload</strong></li>
+        <li>Upload the CSV you just downloaded</li>
+        <li>Import location: <strong>Replace data at selected cell</strong></li>
+        <li>Select cell <strong>A1</strong></li>
+        <li>✓ Import data</li>
+      </ol>
+    </div>
+
+    <div id="output"></div>
+  </div>
+
+  <script>
+    const SHEET_ID = '1071nhgKo4kStR5KkikpWEq8LKKDnMqE7FOhp3wZv9dw';
+    let visitedBreweries = [];
+    let allBreweries = [];
+
+    // Load brewery data from Google Sheet
+    async function loadBreweryData() {
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=cleaned`;
+        const response = await fetch(url);
+        const text = await response.text();
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        
+        const rows = json.table.rows.map(row => {
+          const cells = row.c || [];
+          return {
+            province: cells[0]?.v || '',
+            name: cells[1]?.v || '',
+            address: cells[2]?.v || '',
+            city: cells[3]?.v || '',
+            postal: cells[4]?.v || '',
+            phone: cells[5]?.v || '',
+            website: cells[6]?.v || '',
+            instagram: cells[7]?.v || '',
+            email: cells[8]?.v || '',
+            founded: cells[9]?.v || '',
+            facebook: cells[10]?.v || '',
+            status: cells[11]?.v || '',
+            data_source: cells[12]?.v || '',
+            last_updated: cells[13]?.v || '',
+            visited: cells[14]?.v || 'FALSE',
+            visit_date: cells[15]?.v || ''
+          };
+        });
+        
+        allBreweries = rows.filter(b => b.name);
+        console.log(`Loaded ${allBreweries.length} breweries from sheet`);
+        return true;
+      } catch (error) {
+        console.error('Error loading brewery data:', error);
+        return false;
+      }
+    }
+
+    async function checkLocalStorage() {
+      const output = document.getElementById('output');
+      output.style.display = 'block';
+      output.innerHTML = '<div>Loading brewery data from Google Sheet...</div>';
+      
+      // Load brewery data first
+      const loaded = await loadBreweryData();
+      if (!loaded) {
+        output.innerHTML = '<div class="error">❌ Error loading brewery data from Google Sheet.</div>';
+        return;
+      }
+      
+      // Get visited IDs from localStorage
+      const visitedIds = JSON.parse(localStorage.getItem('visitedBreweries') || '[]');
+      
+      if (visitedIds.length === 0) {
+        output.innerHTML = '<div class="error">❌ No visited breweries found in localStorage.</div>';
+        document.getElementById('localStorageStatus').innerHTML = 
+          '❌ <strong>0 visited breweries</strong> found in browser storage.';
+        return;
+      }
+      
+      // Match IDs to brewery names
+      visitedBreweries = [];
+      const today = new Date().toISOString().split('T')[0];
+      
+      visitedIds.forEach(id => {
+        // Try to find brewery by ID or name match
+        const brewery = allBreweries.find(b => {
+          const generatedId = `can_${b.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+          return id === generatedId || b.name.toLowerCase().includes(id.toLowerCase());
+        });
+        
+        if (brewery) {
+          visitedBreweries.push({
+            ...brewery,
+            visited: 'TRUE',
+            visit_date: today
+          });
+        }
+      });
+      
+      document.getElementById('localStorageStatus').innerHTML = 
+        `✅ Found <strong>${visitedBreweries.length} visited breweries</strong> in browser storage.`;
+      
+      document.getElementById('downloadBtn').disabled = false;
+      
+      let html = `<div class="success">✅ Found ${visitedBreweries.length} visited breweries:</div>`;
+      visitedBreweries.forEach(b => {
+        html += `<div class="brewery-item">🍺 ${b.name} - ${b.city}, ${b.province}</div>`;
+      });
+      
+      output.innerHTML = html;
+    }
+
+    function downloadCSV() {
+      if (visitedBreweries.length === 0) {
+        alert('Please check visited breweries first!');
+        return;
+      }
+      
+      // Create full CSV with ALL breweries, marking visited ones
+      let csv = 'Province,Brewery_Name,Street_Address,City,Postal_Code,Phone,Website,Instagram,Email,Founded,Facebook,Status,Data_Source,Last_Updated,Visited,Visit_Date\n';
+      
+      allBreweries.forEach(brewery => {
+        const isVisited = visitedBreweries.find(v => v.name === brewery.name);
+        const visited = isVisited ? 'TRUE' : 'FALSE';
+        const visitDate = isVisited ? isVisited.visit_date : '';
+        
+        const row = [
+          brewery.province,
+          brewery.name,
+          brewery.address,
+          brewery.city,
+          brewery.postal,
+          brewery.phone,
+          brewery.website,
+          brewery.instagram,
+          brewery.email,
+          brewery.founded,
+          brewery.facebook,
+          brewery.status,
+          brewery.data_source,
+          brewery.last_updated,
+          visited,
+          visitDate
+        ];
+        
+        // Escape quotes and wrap in quotes if contains comma
+        const escapedRow = row.map(field => {
+          const str = String(field || '');
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        });
+        
+        csv += escapedRow.join(',') + '\n';
+      });
+      
+      // Download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `brewery_atlas_visited_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      document.getElementById('output').innerHTML += 
+        '<div class="success" style="margin-top: 15px;">✅ CSV downloaded! Now import it to your Google Sheet (see Step 3 above).</div>';
+    }
+
+    // Auto-check on page load
+    window.addEventListener('load', () => {
+      const visitedIds = JSON.parse(localStorage.getItem('visitedBreweries') || '[]');
+      document.getElementById('localStorageStatus').innerHTML = 
+        visitedIds.length > 0 
+          ? `✅ Found <strong>${visitedIds.length} visited breweries</strong> in browser storage.`
+          : '❌ No visited breweries found. Mark some breweries as visited on your brewery atlas website first.';
+    });
+  </script>
+</body>
+</html>

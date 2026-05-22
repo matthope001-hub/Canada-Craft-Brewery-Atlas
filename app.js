@@ -43,22 +43,10 @@ function updateDashboard() {
     totalKm += haversine(visited[i-1].lat, visited[i-1].lng, visited[i].lat, visited[i].lng);
   }
   const provinces = new Set(visited.map(b => b.province).filter(Boolean));
-  const avgKm = visited.length > 1 ? Math.round(totalKm / (visited.length - 1)) : 0;
+  
   document.getElementById('dashVisited').textContent   = visited.length;
   document.getElementById('dashKm').textContent        = Math.round(totalKm).toLocaleString();
   document.getElementById('dashProvinces').textContent = provinces.size;
-  document.getElementById('dashAvgKm').textContent     = visited.length > 1 ? avgKm : '—';
-  const trailEl = document.getElementById('trailList');
-  if (!visited.length) {
-    trailEl.innerHTML = '<span class="trail-empty">No visited breweries yet — mark some breweries as visited to start tracking your trail!</span>';
-    return;
-  }
-  trailEl.innerHTML = visited.map((b, i) => `
-    <div class="trail-stop">
-      <div class="trail-dot" title="${b.name} · ${b.city}" onclick="openModal('${b.id}')">${i+1}</div>
-      ${i < visited.length - 1 ? '<div class="trail-line"></div>' : ''}
-    </div>
-  `).join('');
 }
 
 // ── VISITED STATE ──────────────────────────────────────
@@ -83,6 +71,7 @@ async function toggleVisited(id, event) {
   
   saveVisited();
   updateVisitedStat();
+  updateDashboard(); // Update trail stats
   render();
   
   const btn = document.getElementById('visitedBtn');
@@ -126,6 +115,7 @@ async function syncVisitedToCloud(breweryName, visited) {
 async function loadVisitedFromCloud() {
   if (!USE_CLOUD_SYNC || API_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
     console.log('Cloud sync disabled - using localStorage only');
+    updateDashboard(); // Update trail stats even without cloud sync
     return;
   }
   
@@ -146,10 +136,12 @@ async function loadVisitedFromCloud() {
       
       saveVisited();
       updateVisitedStat();
+      updateDashboard(); // Update trail stats after loading
       render();
     }
   } catch (error) {
     console.error('Error loading from cloud:', error);
+    updateDashboard(); // Update trail stats even if cloud sync fails
   }
 }
 

@@ -38,6 +38,21 @@ function haversine(lat1, lng1, lat2, lng2) {
 // ── DASHBOARD UPDATE ───────────────────────────────────
 function updateDashboard() {
   const visited = allBreweries.filter(b => visitedSet.has(b.id) && b.lat && b.lng);
+  
+  console.log('=== TRAIL STATS DEBUG ===');
+  console.log('Total breweries in visitedSet:', visitedSet.size);
+  console.log('Visited breweries WITH coordinates:', visited.length);
+  
+  // Show which visited breweries are missing coordinates
+  const visitedAll = allBreweries.filter(b => visitedSet.has(b.id));
+  const missingCoords = visitedAll.filter(b => !b.lat || !b.lng);
+  if (missingCoords.length > 0) {
+    console.log('⚠️ Visited breweries MISSING coordinates:');
+    missingCoords.forEach(b => {
+      console.log(`  - ${b.name} (${b.city}, ${b.province}) - lat: ${b.lat}, lng: ${b.lng}`);
+    });
+  }
+  
   let totalKm = 0;
   for (let i = 1; i < visited.length; i++) {
     totalKm += haversine(visited[i-1].lat, visited[i-1].lng, visited[i].lat, visited[i].lng);

@@ -3,10 +3,9 @@
 // ═══════════════════════════════════════════════════════
 const SHEET_ID = '1071nhgKo4kStR5KkikpWEq8LKKDnMqE7FOhp3wZv9dw';
 
-// IMPORTANT: Replace this with your deployed Apps Script Web App URL
-// Instructions in the README
-const API_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
-const USE_CLOUD_SYNC = false; // Set to true after deploying the web app
+// Apps Script Web App URL for cloud sync
+const API_URL = 'https://script.google.com/macros/s/AKfycbxzjP9f2u9vZcATrlDgsx4QyIwBF_nfL6tZmYkx-j_SsSVoAAxtP3iwkn5bp16DVFpjtA/exec';
+const USE_CLOUD_SYNC = true; // Cloud sync enabled!
 
 // Province/State colors
 const PROV_COLORS = {

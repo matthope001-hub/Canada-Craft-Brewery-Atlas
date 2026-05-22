@@ -471,18 +471,15 @@ function render() {
     let visitDate = '';
     if (isVisited && b.visit_date) {
       const dateStr = b.visit_date;
-      // Handle different date formats
       if (dateStr.includes('-')) {
-        // Format: YYYY-MM-DD
         const parts = dateStr.split('-');
         if (parts.length === 3) {
-          visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(2)}`;
+          visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(-2)}`;
         }
       } else if (dateStr.includes('/')) {
-        // Already in slash format, just use it
         visitDate = dateStr;
       } else {
-        visitDate = dateStr; // Use as-is
+        visitDate = dateStr;
       }
     }
     
@@ -826,7 +823,7 @@ function showVisitedList() {
         if (dateStr.includes('-')) {
           const parts = dateStr.split('-');
           if (parts.length === 3) {
-            visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(2)}`;
+            visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(-2)}`;
           }
         } else {
           visitDate = dateStr;

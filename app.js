@@ -466,11 +466,30 @@ function render() {
     ].filter(Boolean);
     const mapsUrl   = `https://maps.google.com/?q=${b.lat},${b.lng}`;
     const isVisited = visitedSet.has(b.id);
-    const visitDate = isVisited && b.visit_date ? b.visit_date : '';
+    
+    // Format date as mm/dd/yy
+    let visitDate = '';
+    if (isVisited && b.visit_date) {
+      const dateStr = b.visit_date;
+      // Handle different date formats
+      if (dateStr.includes('-')) {
+        // Format: YYYY-MM-DD
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(2)}`;
+        }
+      } else if (dateStr.includes('/')) {
+        // Already in slash format, just use it
+        visitDate = dateStr;
+      } else {
+        visitDate = dateStr; // Use as-is
+      }
+    }
+    
     return `
     <div class="card ${isVisited ? 'visited' : ''}" style="--province-color:${color}"
          onclick="openModal('${b.id}')">
-      ${isVisited ? `<div class="visit-badge">🚙 ${visitDate}</div>` : ''}
+      ${isVisited && visitDate ? `<div class="visit-badge">${visitDate}</div>` : ''}
       <div class="card-header">
         <div style="display:flex;gap:7px;align-items:center">
           <div class="province-dot"></div>

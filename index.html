@@ -172,4 +172,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="app.js"></script>
 </body>
+  <div id="visitedListOverlay" onclick="closeVisitedList(event)">
+  <div id="visitedListModal" onclick="event.stopPropagation()">
+    <div id="visitedListContent"></div>
+  </div>
+</div>
 </html>

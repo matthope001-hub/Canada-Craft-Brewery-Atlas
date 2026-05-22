@@ -466,9 +466,11 @@ function render() {
     ].filter(Boolean);
     const mapsUrl   = `https://maps.google.com/?q=${b.lat},${b.lng}`;
     const isVisited = visitedSet.has(b.id);
+    const visitDate = isVisited && b.visit_date ? b.visit_date : '';
     return `
     <div class="card ${isVisited ? 'visited' : ''}" style="--province-color:${color}"
          onclick="openModal('${b.id}')">
+      ${isVisited ? `<div class="visit-badge">🚙 ${visitDate}</div>` : ''}
       <div class="card-header">
         <div style="display:flex;gap:7px;align-items:center">
           <div class="province-dot"></div>

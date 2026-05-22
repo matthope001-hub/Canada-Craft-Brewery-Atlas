@@ -872,3 +872,29 @@
     background: var(--gecko);
     margin-right: 5px;
   }
+#visitedListOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  overflow-y: auto;
+}
+
+#visitedListModal {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  margin: 40px auto;
+  padding: 0;
+}
+
+#visitedListContent {
+  padding: 24px;
+}

@@ -194,7 +194,9 @@ function updateSyncStatus(status) {
 }
 
 function updateVisitedStat() {
-  document.getElementById('statVisited').textContent = visitedSet.size;
+  // Only count visited breweries that have valid coordinates
+  const visitedWithCoords = allBreweries.filter(b => visitedSet.has(b.id) && b.lat && b.lng);
+  document.getElementById('statVisited').textContent = visitedWithCoords.length;
 }
 
 // ─────────────────────────────────────────────────────

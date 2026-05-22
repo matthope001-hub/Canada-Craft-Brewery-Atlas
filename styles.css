@@ -898,3 +898,18 @@
 #visitedListContent {
   padding: 24px;
 }
+.visit-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--gecko);
+  color: var(--ink);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(120,190,32,0.3);
+  z-index: 1;
+  pointer-events: none;
+}

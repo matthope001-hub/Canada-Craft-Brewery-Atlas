@@ -768,6 +768,8 @@ function showVisitedList() {
       return a.name.localeCompare(b.name);
     });
   
+  console.log('Showing visited list with', visited.length, 'breweries');
+  
   if (visited.length === 0) {
     document.getElementById('visitedListContent').innerHTML = 
       '<p style="text-align:center;color:#999;padding:40px;">No visited breweries yet. Start marking breweries as visited to build your list!</p>';
@@ -814,7 +816,11 @@ function showVisitedList() {
     document.getElementById('visitedListContent').innerHTML = html;
   }
   
-  document.getElementById('visitedListOverlay').style.display = 'flex';
+  const overlay = document.getElementById('visitedListOverlay');
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  console.log('Modal should now be visible');
 }
 
 function closeVisitedList(event) {

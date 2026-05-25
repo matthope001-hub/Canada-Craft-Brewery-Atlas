@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canada Craft Brewery Atlas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <div class="eyebrow">🍁 Thelma's Trail Guide</div>
+    <h1>Canada <em>Craft</em><br>Brewery Atlas</h1>
+    <p class="tagline">Every independent craft brewery · Every province · One searchable map</p>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num" id="statTotal">—</span>
+        <span class="stat-label">Breweries</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statProvinces">10</span>
+        <span class="stat-label">Provinces/States</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statShowing">—</span>
+        <span class="stat-label">Showing</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statVisited" style="color:#78BE20">0</span>
+        <span class="stat-label">Visited</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── JEEP STRIP ─────────────────────── -->
+<div class="jeep-strip">
+  <img src="data:image/png;base64,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-finder.html
+One name per line.</p>
+  <textarea id="existingNames" placeholder="3 Brewers&#10;Collective Arts Brewing&#10;Bellwoods Brewery&#10;..."></textarea>
+</div>
+
+<div class="card">
+  <h2>Step 2 — Load AGCO Data</h2>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Upload the <strong>OpenDataManufacturersLicences_En.csv</strong> file from AGCO, or use the pre-processed data below.</p>
+  <label class="file-label" for="fileInput">📂 Click to upload AGCO CSV file</label>
+  <input type="file" id="fileInput" accept=".csv" onchange="loadCSV(this)">
+  <div id="fileStatus" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+  <button class="btn" onclick="runComparison()" id="compareBtn">🔍 Find Missing Breweries</button>
+</div>
+
+<div id="results">
+  <div class="stats">
+    <div class="stat"><span class="stat-num" id="statAgco">0</span><span class="stat-label">Active in AGCO</span></div>
+    <div class="stat"><span class="stat-num" id="statMatched">0</span><span class="stat-label">Already in Sheet</span></div>
+    <div class="stat"><span class="stat-num" id="statMissing">0</span><span class="stat-label">Potentially Missing</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Missing Breweries</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+      <span class="badge badge-new">New</span> = not in your Sheet &nbsp;
+      <span class="badge badge-maybe">Similar</span> = may exist under a different name — verify before adding
+    </p>
+    <div class="filter-row">
+      <input type="text" id="tableSearch" placeholder="Filter by name or city…" oninput="filterTable()">
+      <label style="font-size:12px;color:var(--muted)"><input type="checkbox" id="hideMatches" onchange="filterTable()"> Hide similar matches</label>
+      <label style="font-size:12px;color:var(--muted)"><input type="checkbox" id="showAll" onchange="filterTable()"> Show all (including matched)</label>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th>
+            <th>Name</th>
+            <th>City</th>
+            <th>Address</th>
+            <th>Postal</th>
+            <th>Licence #</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Step 3 — Export Selected</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Select breweries above, then export to CSV for import into your Google Sheet.</p>
+    <button class="btn" onclick="exportSelected()">📥 Export Selected to CSV</button>
+    <textarea id="csvOutput" placeholder="CSV output appears here…" readonly style="margin-top:10px;height:150px"></textarea>
+    <button class="btn secondary" onclick="copyCSV()" style="margin-top:10px">📋 Copy CSV</button>
+  </div>
+</div>
+
+<footer>
+  <p>Canada Craft Brewery Atlas · Data sourced from OCB, CCBA, BreweryFinder.ca, Open Brewery DB · <a href="#">Submit a Brewery</a> · <a href="#">Claim Your Listing</a></p>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- UPDATED: Split JavaScript files for easier maintenance -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="sync.js"></script>
+<script src="ui.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

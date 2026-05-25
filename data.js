@@ -160,3 +160,5 @@ function getCachedUS() {
 function setCachedUS(data) {
   try { localStorage.setItem(US_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
 }
+
+// NOTE: init() is called from main.js after all functions are loaded

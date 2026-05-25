@@ -886,16 +886,17 @@
   background: rgba(0, 0, 0, 0.7);
   z-index: 9999;
   overflow-y: auto;
+  align-items: center;
+  justify-content: center;
 }
 
 #visitedListModal {
   background: white;
   border-radius: 12px;
-  max-width: 600px;
+  max-width: 800px;
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
-  margin: 40px auto;
   padding: 0;
 }
 

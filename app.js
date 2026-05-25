@@ -90,3 +90,34 @@ async function loadUSBreweries() {
     console.warn('❌ US brewery API fetch failed:', e);
   }
 }
+// Add this to your app.js if it's missing
+
+// ─────────────────────────────────────────────────────
+// FILTER FUNCTIONS
+// ─────────────────────────────────────────────────────
+
+function filterBreweries() {
+  render();
+  if (currentView === 'map') renderMap();
+}
+
+function updateStats() {
+  const total = allBreweries.length;
+  const filtered = getFiltered().length;
+  const visited = allBreweries.filter(b => visitedSet.has(b.id)).length;
+  
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statShowing').textContent = filtered;
+  document.getElementById('statVisited').textContent = visited;
+  document.getElementById('countDisplay').textContent = filtered;
+}
+
+function updateVisitedStat() {
+  const visited = allBreweries.filter(b => visitedSet.has(b.id)).length;
+  document.getElementById('statVisited').textContent = visited;
+}
+
+// Make sure these variables exist at the top of app.js
+let currentView = 'grid'; // or 'map'
+let routeActive = false;
+let routeLine = null;

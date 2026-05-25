@@ -71,6 +71,36 @@ function saveVisited() {
   localStorage.setItem('visitedBreweries', JSON.stringify([...visitedSet])); 
 }
 
+// Auto-geocode brewery when marked as visited (if missing coordinates)
+async function autoGeocodeIfNeeded(brewery) {
+  if (brewery.lat === 0 || brewery.lng === 0) {
+    console.log(`🔍 Auto-geocoding ${brewery.name}...`);
+    
+    const query = brewery.address 
+      ? `${brewery.address}, ${brewery.city}, ${brewery.province}, Canada`
+      : `${brewery.name}, ${brewery.city}, ${brewery.province}, Canada`;
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+        { headers: { 'User-Agent': 'BreweryAtlas/1.0' } }
+      );
+      
+      const results = await response.json();
+      
+      if (results.length > 0) {
+        brewery.lat = parseFloat(results[0].lat);
+        brewery.lng = parseFloat(results[0].lon);
+        console.log(`✓ Auto-geocoded ${brewery.name} → ${brewery.lat}, ${brewery.lng}`);
+        return true;
+      }
+    } catch (e) {
+      console.error(`Auto-geocoding failed for ${brewery.name}:`, e);
+    }
+  }
+  return false;
+}
+
 async function toggleVisited(id, event) {
   event.stopPropagation();
   const brewery = allBreweries.find(b => b.id === id);
@@ -79,6 +109,8 @@ async function toggleVisited(id, event) {
   const isNowVisited = !visitedSet.has(id);
   
   if (isNowVisited) {
+    // Auto-geocode if missing coordinates
+    await autoGeocodeIfNeeded(brewery);
     visitedSet.add(id);
   } else {
     visitedSet.delete(id);

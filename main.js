@@ -62,5 +62,11 @@ function getFiltered() {
 // - SAMPLE_DATA array
 // - Any other functions
 
-// Don't forget to call init() at the very end:
-init();
+// ═══════════════════════════════════════════════════════
+// Initialize after DOM is loaded
+// ═══════════════════════════════════════════════════════
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

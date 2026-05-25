@@ -119,7 +119,7 @@ async function autoGeocodeIfNeeded(brewery) {
 
 // Sync geocoded coordinates back to Google Sheets
 async function syncToGoogleSheets(breweryId, lat, lng) {
-  const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbxnBrbkc_mEPVPh3-CvT-QieRL217A3QZA5iWercfKmOq4YbJN6OOigJFC-si6OgLmzEg/exec';
+  const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwrgzLaGWHShxmPhNE1UB1TYjwN6IW4eWSFD7bpOm1-ERGP8HH8phoswJuWj5pFwUtWlw/exec';
   
   try {
     const url = `${SHEETS_API_URL}?action=sync&breweryId=${encodeURIComponent(breweryId)}&lat=${lat}&lng=${lng}`;

@@ -866,8 +866,12 @@ function showVisitedList() {
   }
   
   const overlay = document.getElementById('visitedListOverlay');
-  overlay.style.display = 'flex';
-  console.log('Modal display set to flex, should be visible now');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    console.log('Modal display set to flex, should be visible now');
+  } else {
+    console.error('visitedListOverlay element not found!');
+  }
 }
 
 function closeVisitedList(event) {

@@ -99,8 +99,8 @@ async function autoGeocodeIfNeeded(brewery) {
             brewery.lng = parseFloat(results[0].lon);
             console.log(`✓ Auto-geocoded ${brewery.name} → ${brewery.lat}, ${brewery.lng}`);
             
-            // Sync coordinates back to Google Sheets
-            await syncToGoogleSheets(brewery.id, brewery.lat, brewery.lng);
+            // Sync coordinates back to Google Sheets - pass the brewery object
+            await syncToGoogleSheets(brewery);
             
             return true;
           }
@@ -118,17 +118,17 @@ async function autoGeocodeIfNeeded(brewery) {
 }
 
 // Sync geocoded coordinates back to Google Sheets
-async function syncToGoogleSheets(breweryId, lat, lng) {
+async function syncToGoogleSheets(brewery) {
   const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwrgzLaGWHShxmPhNE1UB1TYjwN6IW4eWSFD7bpOm1-ERGP8HH8phoswJuWj5pFwUtWlw/exec';
   
   try {
-    const url = `${SHEETS_API_URL}?action=sync&breweryId=${encodeURIComponent(breweryId)}&lat=${lat}&lng=${lng}`;
+    const url = `${SHEETS_API_URL}?action=sync&breweryName=${encodeURIComponent(brewery.name)}&lat=${brewery.lat}&lng=${brewery.lng}`;
     const response = await fetch(url, { method: 'GET' });
     
     const result = await response.json();
     
     if (result.success) {
-      console.log(`✓ Synced to Google Sheets: ${breweryId}`);
+      console.log(`✓ Synced to Google Sheets: ${brewery.name}`);
     } else {
       console.error(`Failed to sync to Google Sheets: ${result.error}`);
     }

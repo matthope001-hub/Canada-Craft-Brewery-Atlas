@@ -148,8 +148,10 @@ async function toggleVisited(id, event) {
   const isNowVisited = !visitedSet.has(id);
   
   if (isNowVisited) {
+    console.log(`Marking ${brewery.name} as visited - lat: ${brewery.lat}, lng: ${brewery.lng}`);
     // Auto-geocode if missing coordinates
-    await autoGeocodeIfNeeded(brewery);
+    const geocoded = await autoGeocodeIfNeeded(brewery);
+    console.log(`Geocoding result: ${geocoded}`);
     visitedSet.add(id);
   } else {
     visitedSet.delete(id);

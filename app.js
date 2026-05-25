@@ -122,11 +122,8 @@ async function syncToGoogleSheets(breweryId, lat, lng) {
   const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbxzjP9f2u9vZcATrlDgsx4QyIwBF_nfL6tZmYkx-j_SsSVoAAxtP3iwkn5bp16DVFpjtA/exec';
   
   try {
-    const response = await fetch(SHEETS_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ breweryId, lat, lng })
-    });
+    const url = `${SHEETS_API_URL}?action=sync&breweryId=${encodeURIComponent(breweryId)}&lat=${lat}&lng=${lng}`;
+    const response = await fetch(url, { method: 'GET' });
     
     const result = await response.json();
     

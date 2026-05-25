@@ -470,15 +470,23 @@ function render() {
     // Format date as mm/dd/yy
     let visitDate = '';
     if (isVisited && b.visit_date) {
-      const dateStr = b.visit_date;
-      if (dateStr.includes('-')) {
+      const dateStr = String(b.visit_date);
+      
+      // Handle Google Sheets Date object format: "Date(2025,4,22)"
+      if (dateStr.startsWith('Date(')) {
+        const match = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (match) {
+          const year = match[1].slice(-2);
+          const month = String(parseInt(match[2]) + 1).padStart(2, '0'); // Month is 0-indexed
+          const day = String(match[3]).padStart(2, '0');
+          visitDate = `${month}/${day}/${year}`;
+        }
+      } else if (dateStr.includes('-')) {
         const parts = dateStr.split('-');
         if (parts.length === 3) {
           visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(-2)}`;
         }
       } else if (dateStr.includes('/')) {
-        visitDate = dateStr;
-      } else {
         visitDate = dateStr;
       }
     }
@@ -816,11 +824,19 @@ function showVisitedList() {
           </h3>`;
       }
       
-      // Format visit date
+      // Format visit date - same logic as render()
       let visitDate = '';
       if (b.visit_date) {
-        const dateStr = b.visit_date;
-        if (dateStr.includes('-')) {
+        const dateStr = String(b.visit_date);
+        if (dateStr.startsWith('Date(')) {
+          const match = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
+          if (match) {
+            const year = match[1].slice(-2);
+            const month = String(parseInt(match[2]) + 1).padStart(2, '0');
+            const day = String(match[3]).padStart(2, '0');
+            visitDate = `${month}/${day}/${year}`;
+          }
+        } else if (dateStr.includes('-')) {
           const parts = dateStr.split('-');
           if (parts.length === 3) {
             visitDate = `${parts[1]}/${parts[2]}/${parts[0].slice(-2)}`;

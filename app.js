@@ -900,7 +900,8 @@ function showVisitedList() {
   const overlay = document.getElementById('visitedListOverlay');
   if (overlay) {
     overlay.style.display = 'flex';
-    console.log('Modal display set to flex, should be visible now');
+    overlay.classList.add('open');
+    console.log('Modal display set to flex with open class');
   } else {
     console.error('visitedListOverlay element not found!');
   }
@@ -908,7 +909,9 @@ function showVisitedList() {
 
 function closeVisitedList(event) {
   if (!event || event.target.id === 'visitedListOverlay') {
-    document.getElementById('visitedListOverlay').style.display = 'none';
+    const overlay = document.getElementById('visitedListOverlay');
+    overlay.style.display = 'none';
+    overlay.classList.remove('open');
   }
 }
 

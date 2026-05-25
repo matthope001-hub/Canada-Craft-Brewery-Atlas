@@ -76,29 +76,68 @@ async function autoGeocodeIfNeeded(brewery) {
   if (brewery.lat === 0 || brewery.lng === 0) {
     console.log(`🔍 Auto-geocoding ${brewery.name}...`);
     
-    const query = brewery.address 
-      ? `${brewery.address}, ${brewery.city}, ${brewery.province}, Canada`
-      : `${brewery.name}, ${brewery.city}, ${brewery.province}, Canada`;
+    // Try multiple query variations
+    const queries = [
+      brewery.address ? `${brewery.address}, ${brewery.city}, ${brewery.province}, Canada` : null,
+      `${brewery.name}, ${brewery.city}, ${brewery.province}, Canada`,
+      `${brewery.city}, ${brewery.province}, Canada`
+    ].filter(q => q);
     
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'BreweryAtlas/1.0' } }
-      );
-      
-      const results = await response.json();
-      
-      if (results.length > 0) {
-        brewery.lat = parseFloat(results[0].lat);
-        brewery.lng = parseFloat(results[0].lon);
-        console.log(`✓ Auto-geocoded ${brewery.name} → ${brewery.lat}, ${brewery.lng}`);
-        return true;
+    for (const query of queries) {
+      try {
+        console.log(`  Trying: ${query}`);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+          { headers: { 'User-Agent': 'BreweryAtlas/1.0' } }
+        );
+        
+        if (response.ok) {
+          const results = await response.json();
+          
+          if (results.length > 0) {
+            brewery.lat = parseFloat(results[0].lat);
+            brewery.lng = parseFloat(results[0].lon);
+            console.log(`✓ Auto-geocoded ${brewery.name} → ${brewery.lat}, ${brewery.lng}`);
+            
+            // Sync coordinates back to Google Sheets
+            await syncToGoogleSheets(brewery.id, brewery.lat, brewery.lng);
+            
+            return true;
+          }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+      } catch (e) {
+        console.error(`  ✗ Query failed:`, e);
       }
-    } catch (e) {
-      console.error(`Auto-geocoding failed for ${brewery.name}:`, e);
     }
+    
+    console.warn(`⚠️ Could not geocode ${brewery.name} - no results found`);
   }
   return false;
+}
+
+// Sync geocoded coordinates back to Google Sheets
+async function syncToGoogleSheets(breweryId, lat, lng) {
+  const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbxzjP9f2u9vZcATrlDgsx4QyIwBF_nfL6tZmYkx-j_SsSVoAAxtP3iwkn5bp16DVFpjtA/exec';
+  
+  try {
+    const response = await fetch(SHEETS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ breweryId, lat, lng })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log(`✓ Synced to Google Sheets: ${breweryId}`);
+    } else {
+      console.error(`Failed to sync to Google Sheets: ${result.error}`);
+    }
+  } catch (e) {
+    console.error(`Error syncing to Google Sheets:`, e);
+  }
 }
 
 async function toggleVisited(id, event) {

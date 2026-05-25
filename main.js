@@ -349,7 +349,7 @@ function closeVisitedList(event) {
 // ── KEYBOARD SHORTCUTS ──────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { 
-    document.getElementById('modalOverlay').classList.remove('open'); 
+    document.getElementById('modalOverlay')?.classList.remove('open'); 
     document.body.style.overflow = ''; 
   }
 });
@@ -357,8 +357,20 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════
 // Initialize after DOM is loaded
 // ═══════════════════════════════════════════════════════
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
+// Wait for BOTH DOMContentLoaded AND all scripts to be loaded
+function startApp() {
+  // Double-check critical elements exist
+  if (!document.getElementById('breweryGrid') || 
+      !document.getElementById('searchInput')) {
+    setTimeout(startApp, 50); // Retry in 50ms
+    return;
+  }
   init();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  // DOM already loaded, but wait a tick to ensure all elements are ready
+  setTimeout(startApp, 0);
 }

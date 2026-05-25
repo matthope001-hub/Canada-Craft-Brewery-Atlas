@@ -2,12 +2,7 @@
 // MAIN.JS - Routes, Modals, Map, and Remaining Functions
 // ═══════════════════════════════════════════════════════
 
-// ─────────────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────────────
-let currentView = 'grid';
-let routeActive = false;
-let routeLine = null;
+// Map-specific state (state variables like currentView, routeActive, etc. are in data.js)
 let map = null;
 let mapMarkers = [];
 

@@ -9,6 +9,11 @@ let mapMarkers = [];
 // ─────────────────────────────────────────────────────
 // FILTER
 // ─────────────────────────────────────────────────────
+function filterBreweries() {
+  render();
+  if (currentView === 'map') renderMap();
+}
+
 function getFiltered() {
   const q = document.getElementById('searchInput').value.toLowerCase().trim();
   const prov = document.getElementById('provinceFilter').value;

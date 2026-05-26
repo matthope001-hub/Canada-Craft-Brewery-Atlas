@@ -118,6 +118,7 @@ async function loadUSBreweries() {
     updateStats();
     render();
     if (currentView === 'map') renderMap();
+    loadOverpassBreweries();
     return;
   }
 
@@ -149,6 +150,101 @@ async function loadUSBreweries() {
     if (currentView === 'map') renderMap();
   } catch(e) {
     console.warn('❌ US brewery API fetch failed:', e);
+  }
+
+  // ── STEP 3: Fill gaps from OpenStreetMap (Overpass) ──────────
+  loadOverpassBreweries();
+}
+
+// ═══════════════════════════════════════════════════════
+// OPENSTREETMAP / OVERPASS — fills gaps OBD misses
+// ═══════════════════════════════════════════════════════
+// Bounding boxes [south, west, north, east] per state for Overpass queries.
+const STATE_BBOX = {
+  NY:[40.50,-79.76,45.02,-71.86], PA:[39.72,-80.52,42.27,-74.69],
+  OH:[38.40,-84.82,41.98,-80.52], KY:[36.50,-89.57,39.15,-81.96],
+  TN:[34.98,-90.31,36.68,-81.65], WV:[37.20,-82.64,40.64,-77.72],
+  VA:[36.54,-83.68,39.47,-75.24], NC:[33.84,-84.32,36.59,-75.46],
+  SC:[32.03,-83.35,35.22,-78.54], GA:[30.36,-85.61,35.00,-80.84],
+  FL:[24.40,-87.63,31.00,-80.03]
+};
+
+// Normalize a name for comparison: lowercase, strip punctuation and common suffixes
+function normName(n) {
+  return (n || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/\b(brewing|brewery|breweries|company|co|llc|inc|the|taproom|beer|ales?|craft)\b/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+// Is this OSM brewery already covered by an existing one?
+// Duplicate if same normalized name AND within ~150m, OR exact normalized name match in same city.
+function isDuplicate(osm, existing) {
+  const osmN = normName(osm.name);
+  if (!osmN) return true; // unnamed → skip
+  return existing.some(b => {
+    if (b.province !== osm.province) return false;
+    const bN = normName(b.name);
+    if (!bN) return false;
+    const nameMatch = bN === osmN || bN.includes(osmN) || osmN.includes(bN);
+    if (!nameMatch) return false;
+    // name matches — confirm with proximity if both have coords
+    if (b.lat && b.lng && osm.lat && osm.lng) {
+      return haversine(b.lat, b.lng, osm.lat, osm.lng) < 0.15; // 150m
+    }
+    return true; // name matches and no coords to disprove
+  });
+}
+
+async function loadOverpassBreweries() {
+  try {
+    const codes = Object.keys(STATE_BBOX);
+    const fetches = codes.map(async code => {
+      const [s,w,n,e] = STATE_BBOX[code];
+      const q = `[out:json][timeout:25];(node["craft"="brewery"](${s},${w},${n},${e});way["craft"="brewery"](${s},${w},${n},${e}););out center tags;`;
+      try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:q });
+        const json = await res.json();
+        return (json.elements || []).map(el => {
+          const t = el.tags || {};
+          const lat = el.lat || (el.center && el.center.lat);
+          const lng = el.lon || (el.center && el.center.lon);
+          return {
+            id: 'osm_' + el.id, name: t.name || '', province: code,
+            city: t['addr:city'] || '', region: t['addr:city'] || '',
+            type: 'micro', lat: parseFloat(lat)||0, lng: parseFloat(lng)||0,
+            address: [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),
+            postal: t['addr:postcode'] || '', phone: t.phone || t['contact:phone'] || '',
+            website: t.website || t['contact:website'] || '',
+            styles:'', founded:'', ocb_member:false,
+            taproom:true, patio:false, kitchen:false, pet:false, tours:false, accessible:false,
+            status:'active', notes:'OpenStreetMap'
+          };
+        }).filter(b => b.name && b.lat && b.lng);
+      } catch { return []; }
+    });
+
+    const osmAll = (await Promise.all(fetches)).flat();
+    // Dedup against what we already loaded, and against each other
+    const added = [];
+    osmAll.forEach(o => {
+      if (!isDuplicate(o, allBreweries) && !isDuplicate(o, added)) added.push(o);
+    });
+
+    if (added.length) {
+      allBreweries = [...allBreweries, ...added];
+      console.log(`✅ Added ${added.length} unique breweries from OpenStreetMap (skipped ${osmAll.length - added.length} duplicates)`);
+      updateStats();
+      render();
+      updateDashboard();
+      if (currentView === 'map') renderMap();
+    } else {
+      console.log(`OpenStreetMap: no new breweries (${osmAll.length} all duplicates)`);
+    }
+  } catch(e) {
+    console.warn('❌ Overpass fetch failed:', e);
   }
 }
 

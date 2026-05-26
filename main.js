@@ -46,6 +46,11 @@ function getFiltered() {
         const tB = ((b.lng - from.lng) * dx + (b.lat - from.lat) * dy) / lenSq;
         return tA - tB;
       });
+  } else {
+    results.sort((a, b) => {
+      if (a.province !== b.province) return a.province.localeCompare(b.province);
+      return a.name.localeCompare(b.name);
+    });
   }
   return results;
 }

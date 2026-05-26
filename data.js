@@ -204,9 +204,25 @@ async function loadOverpassBreweries() {
     const fetches = codes.map(async code => {
       const [s,w,n,e] = STATE_BBOX[code];
       const q = `[out:json][timeout:25];(node["craft"="brewery"](${s},${w},${n},${e});way["craft"="brewery"](${s},${w},${n},${e}););out center tags;`;
+      const endpoints = [
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass-api.de/api/interpreter'
+      ];
+      let json = null;
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:'data=' + encodeURIComponent(q)
+          });
+          if (!res.ok) continue;
+          json = await res.json();
+          break;
+        } catch { /* try next endpoint */ }
+      }
+      if (!json) return [];
       try {
-        const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:q });
-        const json = await res.json();
         return (json.elements || []).map(el => {
           const t = el.tags || {};
           const lat = el.lat || (el.center && el.center.lat);

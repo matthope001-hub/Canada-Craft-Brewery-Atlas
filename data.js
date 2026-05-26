@@ -93,19 +93,25 @@ async function loadUSBreweries() {
       };
     });
     const usBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
-    usBreweries.forEach(b => { if (b.visited) visitedSet.add(b.id); });
-    allBreweries = [...allBreweries, ...usBreweries];
-    console.log(`✅ Loaded ${usBreweries.length} US breweries from Sheet`);
-    updateStats();
-    render();
-    updateDashboard();
-    if (currentView === 'map') renderMap();
-    return;
+    
+    // Only use sheet data if it actually has breweries
+    if (usBreweries.length > 0) {
+      usBreweries.forEach(b => { if (b.visited) visitedSet.add(b.id); });
+      allBreweries = [...allBreweries, ...usBreweries];
+      console.log(`✅ Loaded ${usBreweries.length} US breweries from Sheet`);
+      updateStats();
+      render();
+      updateDashboard();
+      if (currentView === 'map') renderMap();
+      return;
+    } else {
+      console.log('⚠️ US_Breweries sheet is empty, falling back to API');
+    }
   } catch(e) {
     console.warn('⚠️ US_Breweries sheet load failed, falling back to API:', e);
   }
 
-  // ── STEP 2: Fallback to API if Sheet fails ──────────
+  // ── STEP 2: Fallback to API if Sheet fails or is empty ──────────
   const cached = getCachedUS();
   if (cached) {
     console.log(`📦 US cache hit — ${cached.length} breweries (skipping API calls)`);

@@ -199,6 +199,18 @@ function isDuplicate(osm, existing) {
 }
 
 async function loadOverpassBreweries() {
+  // Cache check — reuse OSM results for 24h to avoid slow re-fetches
+  const cachedOSM = getCachedOSM();
+  if (cachedOSM) {
+    console.log(`📦 OSM cache hit — ${cachedOSM.length} breweries (skipping Overpass)`);
+    allBreweries = [...allBreweries, ...cachedOSM];
+    updateStats();
+    render();
+    updateDashboard();
+    if (currentView === 'map') renderMap();
+    return;
+  }
+
   try {
     const codes = Object.keys(STATE_BBOX);
     const fetches = codes.map(async code => {
@@ -237,6 +249,7 @@ async function loadOverpassBreweries() {
     });
 
     if (added.length) {
+      setCachedOSM(added);
       allBreweries = [...allBreweries, ...added];
       console.log(`✅ Added ${added.length} unique breweries from OpenStreetMap (skipped ${osmAll.length - added.length} duplicates)`);
       updateStats();
@@ -263,6 +276,21 @@ function getCachedUS() {
 
 function setCachedUS(data) {
   try { localStorage.setItem(US_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
+const OSM_CACHE_KEY = 'osmBreweriesCache';
+function getCachedOSM() {
+  try {
+    const raw = localStorage.getItem(OSM_CACHE_KEY);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > US_CACHE_TTL) { localStorage.removeItem(OSM_CACHE_KEY); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function setCachedOSM(data) {
+  try { localStorage.setItem(OSM_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
 }
 
 // NOTE: init() is called from main.js after all functions are loaded

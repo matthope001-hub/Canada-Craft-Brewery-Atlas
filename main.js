@@ -312,7 +312,7 @@ function showVisitedList() {
     'ON': 'Ontario', 'BC': 'British Columbia', 'AB': 'Alberta', 'QC': 'Quebec',
     'MB': 'Manitoba', 'SK': 'Saskatchewan', 'NS': 'Nova Scotia', 'NB': 'New Brunswick',
     'PE': 'Prince Edward Island', 'NL': 'Newfoundland & Labrador',
-    'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio', 'KY': 'Kentucky', 'TN': 'Tennessee',
+    'AL': 'Alabama', 'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio', 'KY': 'Kentucky', 'TN': 'Tennessee',
     'WV': 'West Virginia', 'VA': 'Virginia', 'NC': 'North Carolina', 'SC': 'South Carolina', 'GA': 'Georgia', 'FL': 'Florida'
   };
   if (!visited.length) {

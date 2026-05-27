@@ -9,15 +9,36 @@ function filterBreweries() {
   if (currentView === 'map') renderMap();
 }
 
+// ── POPULATE PROVINCE DROPDOWN DYNAMICALLY ──────────────
+function populateProvinceDropdown() {
+  const sel = document.getElementById('provinceFilter');
+  if (!sel) return;
+  const current = sel.value;
+  const provinceNames = {
+    'ON': 'Ontario', 'BC': 'British Columbia', 'AB': 'Alberta', 'QC': 'Quebec',
+    'MB': 'Manitoba', 'SK': 'Saskatchewan', 'NS': 'Nova Scotia', 'NB': 'New Brunswick',
+    'PE': 'Prince Edward Island', 'NL': 'Newfoundland & Labrador',
+    'AL': 'Alabama', 'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio',
+    'KY': 'Kentucky', 'TN': 'Tennessee', 'WV': 'West Virginia', 'VA': 'Virginia',
+    'NC': 'North Carolina', 'SC': 'South Carolina', 'GA': 'Georgia', 'FL': 'Florida'
+  };
+  const provinces = [...new Set(allBreweries.map(b => b.province).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All Provinces/States</option>' +
+    provinces.map(p => `<option value="${p}">${provinceNames[p] || p}</option>`).join('');
+  sel.value = current;
+}
+
 function updateStats() {
   const total = allBreweries.length;
   const filtered = getFiltered().length;
   const visited = allBreweries.filter(b => visitedSet.has(b.id)).length;
-  
+
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statShowing').textContent = filtered;
   document.getElementById('statVisited').textContent = visited;
   document.getElementById('countDisplay').textContent = filtered;
+
+  populateProvinceDropdown(); // ← FIXES DROPDOWN
 }
 
 function updateVisitedStat() {
@@ -44,6 +65,3 @@ function haversine(lat1, lng1, lat2, lng2) {
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
-
-// Add remaining UI functions (render, getFiltered, etc.) here
-// This file would contain all your rendering logic

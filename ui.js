@@ -22,15 +22,37 @@ function populateProvinceDropdown() {
     'PE': 'Prince Edward Island', 'QC': 'Quebec', 'SK': 'Saskatchewan', 'YT': 'Yukon'
   };
   const usNames = {
-    'AL': 'Alabama', 'FL': 'Florida', 'GA': 'Georgia', 'KY': 'Kentucky',
-    'NC': 'North Carolina', 'NY': 'New York', 'OH': 'Ohio', 'PA': 'Pennsylvania',
-    'SC': 'South Carolina', 'TN': 'Tennessee', 'VA': 'Virginia', 'WV': 'West Virginia'
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+    'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+    'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+    'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+    'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+    'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+    'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'Washington D.C.'
   };
 
-  const allCodes = [...new Set(allBreweries.map(b => b.province).filter(Boolean))];
-  const canadaCodes = allCodes.filter(p => canadaNames[p]).sort();
-  const usCodes     = allCodes.filter(p => usNames[p]).sort();
-  const otherCodes  = allCodes.filter(p => !canadaNames[p] && !usNames[p]).sort();
+  // Normalize full names back to codes
+  const nameToCode = {};
+  Object.entries(canadaNames).forEach(([k,v]) => nameToCode[v.toLowerCase()] = k);
+  Object.entries(usNames).forEach(([k,v]) => nameToCode[v.toLowerCase()] = k);
+
+  // Get unique normalized codes from all breweries
+  const seen = new Set();
+  allBreweries.forEach(b => {
+    if (!b.province) return;
+    const raw = String(b.province).trim();
+    const code = nameToCode[raw.toLowerCase()] || raw.toUpperCase();
+    seen.add(code);
+  });
+
+  const canadaCodes = [...seen].filter(p => canadaNames[p]).sort((a,b) => canadaNames[a].localeCompare(canadaNames[b]));
+  const usCodes     = [...seen].filter(p => usNames[p]).sort((a,b) => usNames[a].localeCompare(usNames[b]));
 
   let html = '<option value="">All Provinces/States</option>';
   if (canadaCodes.length) {
@@ -41,11 +63,6 @@ function populateProvinceDropdown() {
   if (usCodes.length) {
     html += '<optgroup label="🇺🇸 United States">';
     html += usCodes.map(p => `<option value="${p}">${usNames[p]}</option>`).join('');
-    html += '</optgroup>';
-  }
-  if (otherCodes.length) {
-    html += '<optgroup label="Other">';
-    html += otherCodes.map(p => `<option value="${p}">${p}</option>`).join('');
     html += '</optgroup>';
   }
 

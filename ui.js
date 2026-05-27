@@ -14,17 +14,42 @@ function populateProvinceDropdown() {
   const sel = document.getElementById('provinceFilter');
   if (!sel) return;
   const current = sel.value;
-  const provinceNames = {
-    'ON': 'Ontario', 'BC': 'British Columbia', 'AB': 'Alberta', 'QC': 'Quebec',
-    'MB': 'Manitoba', 'SK': 'Saskatchewan', 'NS': 'Nova Scotia', 'NB': 'New Brunswick',
-    'PE': 'Prince Edward Island', 'NL': 'Newfoundland & Labrador',
-    'AL': 'Alabama', 'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio',
-    'KY': 'Kentucky', 'TN': 'Tennessee', 'WV': 'West Virginia', 'VA': 'Virginia',
-    'NC': 'North Carolina', 'SC': 'South Carolina', 'GA': 'Georgia', 'FL': 'Florida'
+
+  const canadaNames = {
+    'AB': 'Alberta', 'BC': 'British Columbia', 'MB': 'Manitoba',
+    'NB': 'New Brunswick', 'NL': 'Newfoundland & Labrador', 'NS': 'Nova Scotia',
+    'NT': 'Northwest Territories', 'NU': 'Nunavut', 'ON': 'Ontario',
+    'PE': 'Prince Edward Island', 'QC': 'Quebec', 'SK': 'Saskatchewan', 'YT': 'Yukon'
   };
-  const provinces = [...new Set(allBreweries.map(b => b.province).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">All Provinces/States</option>' +
-    provinces.map(p => `<option value="${p}">${provinceNames[p] || p}</option>`).join('');
+  const usNames = {
+    'AL': 'Alabama', 'FL': 'Florida', 'GA': 'Georgia', 'KY': 'Kentucky',
+    'NC': 'North Carolina', 'NY': 'New York', 'OH': 'Ohio', 'PA': 'Pennsylvania',
+    'SC': 'South Carolina', 'TN': 'Tennessee', 'VA': 'Virginia', 'WV': 'West Virginia'
+  };
+
+  const allCodes = [...new Set(allBreweries.map(b => b.province).filter(Boolean))];
+  const canadaCodes = allCodes.filter(p => canadaNames[p]).sort();
+  const usCodes     = allCodes.filter(p => usNames[p]).sort();
+  const otherCodes  = allCodes.filter(p => !canadaNames[p] && !usNames[p]).sort();
+
+  let html = '<option value="">All Provinces/States</option>';
+  if (canadaCodes.length) {
+    html += '<optgroup label="🍁 Canada">';
+    html += canadaCodes.map(p => `<option value="${p}">${canadaNames[p]}</option>`).join('');
+    html += '</optgroup>';
+  }
+  if (usCodes.length) {
+    html += '<optgroup label="🇺🇸 United States">';
+    html += usCodes.map(p => `<option value="${p}">${usNames[p]}</option>`).join('');
+    html += '</optgroup>';
+  }
+  if (otherCodes.length) {
+    html += '<optgroup label="Other">';
+    html += otherCodes.map(p => `<option value="${p}">${p}</option>`).join('');
+    html += '</optgroup>';
+  }
+
+  sel.innerHTML = html;
   sel.value = current;
 }
 

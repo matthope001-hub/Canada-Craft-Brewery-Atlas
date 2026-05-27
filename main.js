@@ -201,27 +201,7 @@ function closeModal(e) {
   document.body.style.overflow = '';
 }
 
-// ─────────────────────────────────────────────────────
-// VISITED TOGGLE
-// ─────────────────────────────────────────────────────
-function toggleVisited(id, event) {
-  if (event) event.stopPropagation();
-  if (visitedSet.has(id)) {
-    visitedSet.delete(id);
-  } else {
-    visitedSet.add(id);
-    const b = allBreweries.find(x => x.id === id);
-    if (b) b.visit_date = new Date().toISOString().split('T')[0];
-  }
-  localStorage.setItem('visitedBreweries', JSON.stringify([...visitedSet]));
-  updateVisitedStat();
-  const btn = document.getElementById('visitedBtn');
-  if (btn) {
-    btn.textContent = visitedSet.has(id) ? '✅ Visited!' : '🚙 Mark Visited';
-    btn.classList.toggle('marked', visitedSet.has(id));
-  }
-  render();
-}
+// toggleVisited is defined in sync.js — do not duplicate here
 
 // ─────────────────────────────────────────────────────
 // VISITED LIST

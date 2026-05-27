@@ -134,7 +134,34 @@ function formatPhone(raw) {
   const digits = String(raw).replace(/\D/g, '');
   if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
   if (digits.length === 11 && digits[0] === '1') return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
-  return raw; // return as-is if unrecognized format
+  return raw;
+}
+
+function formatPostal(raw, province) {
+  if (!raw) return '';
+  const s = String(raw).trim().toUpperCase().replace(/\s/g, '');
+  // Canadian postal: A1A1A1 → A1A 1A1
+  if (/^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(s)) return `${s.slice(0,3)} ${s.slice(3)}`;
+  // US zip: 12345 or 123456789 → 12345 or 12345-6789
+  if (/^\d{5}$/.test(s)) return s;
+  if (/^\d{9}$/.test(s)) return `${s.slice(0,5)}-${s.slice(5)}`;
+  return raw;
+}
+
+function formatWebsite(raw) {
+  if (!raw) return '';
+  // Strip protocol for display
+  return String(raw).replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+}
+
+function formatInstagram(raw) {
+  if (!raw) return '';
+  return String(raw).startsWith('@') ? raw : '@' + raw;
+}
+
+function formatAddress(b) {
+  const parts = [b.address, b.city, b.province, formatPostal(b.postal, b.province)].filter(Boolean);
+  return parts.join(', ');
 }
 
 // ─────────────────────────────────────────────────────
@@ -171,8 +198,8 @@ function openModal(id) {
     </div>
     <div class="modal-section">
       <div class="modal-section-label">Address</div>
-      <div style="font-size:13px;color:var(--ink)">${b.address}, ${b.city}, ${b.province} ${b.postal}</div>
-      ${b.phone ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">📞 ${formatPhone(b.phone)}</div>` : ''}
+      <div style="font-size:13px;color:var(--ink)">${formatAddress(b)}</div>
+      ${b.phone ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">📞 <a href="tel:${b.phone.replace(/\D/g,'')}" style="color:inherit;text-decoration:none">${formatPhone(b.phone)}</a></div>` : ''}
     </div>
     ${styleArr.length ? `<div class="modal-section"><div class="modal-section-label">Beer Styles</div><div class="styles">${styleArr.map(s => `<span class="style-tag">${s}</span>`).join('')}</div></div>` : ''}
     ${feats.length ? `<div class="modal-section"><div class="modal-section-label">Features &amp; Amenities</div><div class="features">${feats.map(f => `<span class="feat-tag">${f}</span>`).join('')}</div></div>` : ''}
@@ -180,10 +207,10 @@ function openModal(id) {
     <div class="modal-section">
       <div class="modal-section-label">Socials &amp; Web</div>
       <div class="social-links">
-        ${b.website ? `<a class="social-link" href="${b.website}" target="_blank">🌐 Website</a>` : ''}
+        ${b.website ? `<a class="social-link" href="${b.website}" target="_blank">🌐 ${formatWebsite(b.website)}</a>` : ''}
         ${b.jeep_post ? `<a class="social-link" href="${b.jeep_post}" target="_blank" style="background:#EDF7D8;border-color:#C5E89A">🚙 Our Visit</a>` : ''}
-        ${b.instagram ? `<a class="social-link" href="https://instagram.com/${b.instagram.replace('@', '')}" target="_blank">📸 Instagram</a>` : ''}
-        ${b.facebook ? `<span class="social-link">Facebook: ${b.facebook}</span>` : ''}
+        ${b.instagram ? `<a class="social-link" href="https://instagram.com/${b.instagram.replace('@', '')}" target="_blank">📸 ${formatInstagram(b.instagram)}</a>` : ''}
+        ${b.facebook ? `<a class="social-link" href="https://facebook.com/${b.facebook}" target="_blank">👥 Facebook</a>` : ''}
       </div>
     </div>
     <div class="modal-actions">

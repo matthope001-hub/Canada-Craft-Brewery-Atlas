@@ -129,6 +129,14 @@ function render() {
   }).join('') + (overflow ? `<div class="empty" style="grid-column:1/-1;padding:24px;text-align:center"><p style="color:var(--muted);font-size:12px">Showing first ${PAGE} of ${filtered.length} breweries — search or filter to narrow results</p></div>` : '');
 }
 
+function formatPhone(raw) {
+  if (!raw) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  if (digits.length === 11 && digits[0] === '1') return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+  return raw; // return as-is if unrecognized format
+}
+
 // ─────────────────────────────────────────────────────
 // MODAL  ← FIXES CARD CLICK
 // ─────────────────────────────────────────────────────
@@ -164,7 +172,7 @@ function openModal(id) {
     <div class="modal-section">
       <div class="modal-section-label">Address</div>
       <div style="font-size:13px;color:var(--ink)">${b.address}, ${b.city}, ${b.province} ${b.postal}</div>
-      ${b.phone ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">📞 ${b.phone}</div>` : ''}
+      ${b.phone ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">📞 ${formatPhone(b.phone)}</div>` : ''}
     </div>
     ${styleArr.length ? `<div class="modal-section"><div class="modal-section-label">Beer Styles</div><div class="styles">${styleArr.map(s => `<span class="style-tag">${s}</span>`).join('')}</div></div>` : ''}
     ${feats.length ? `<div class="modal-section"><div class="modal-section-label">Features &amp; Amenities</div><div class="features">${feats.map(f => `<span class="feat-tag">${f}</span>`).join('')}</div></div>` : ''}

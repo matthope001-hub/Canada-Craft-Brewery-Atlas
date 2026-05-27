@@ -130,7 +130,7 @@ function render() {
 }
 
 // ─────────────────────────────────────────────────────
-// MODAL
+// MODAL  ← FIXES CARD CLICK
 // ─────────────────────────────────────────────────────
 function openModal(id) {
   const b = allBreweries.find(x => x.id === id);
@@ -190,6 +190,7 @@ function openModal(id) {
       <span>ID: ${b.id}</span>
       <span>Verified: ${b.verified_date || b.verified || 'pending'}</span>
     </div>`;
+
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -200,109 +201,31 @@ function closeModal(e) {
   document.body.style.overflow = '';
 }
 
-// ═══════════════════════════════════════════════════════
-// MAP VIEW
-// ═══════════════════════════════════════════════════════
-function setView(view) {
-  currentView = view;
-  const gridWrap = document.getElementById('gridWrap');
-  const mapView = document.getElementById('mapView');
-  const btnGrid = document.getElementById('btnGrid');
-  const btnMap = document.getElementById('btnMap');
-  const routeBar = document.getElementById('routePlanner');
-  if (view === 'map') {
-    gridWrap.classList.add('hidden'); mapView.classList.add('active');
-    btnGrid.classList.remove('active'); btnMap.classList.add('active');
-    routeBar.classList.add('active');
-    initMap(); renderMap();
+// ─────────────────────────────────────────────────────
+// VISITED TOGGLE
+// ─────────────────────────────────────────────────────
+function toggleVisited(id, event) {
+  if (event) event.stopPropagation();
+  if (visitedSet.has(id)) {
+    visitedSet.delete(id);
   } else {
-    gridWrap.classList.remove('hidden'); mapView.classList.remove('active');
-    btnGrid.classList.add('active'); btnMap.classList.remove('active');
-    routeBar.classList.remove('active');
-    render();
+    visitedSet.add(id);
+    const b = allBreweries.find(x => x.id === id);
+    if (b) b.visit_date = new Date().toISOString().split('T')[0];
   }
-}
-
-function initMap() {
-  if (map) return;
-  map = L.map('mapView').setView([44.5, -76.5], 5);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CARTO', maxZoom: 19 }).addTo(map);
-  renderMap();
-}
-
-function renderMap() {
-  if (!map || typeof L === 'undefined') return;
-  mapMarkers.forEach(m => map.removeLayer(m));
-  mapMarkers = [];
-  const filtered = getFiltered().filter(b => b.lat && b.lng);
-  filtered.forEach(b => {
-    const color = PROV_COLORS[b.province] || '#78BE20';
-    const isVisited = visitedSet.has(b.id);
-    const icon = L.divIcon({
-      className: '',
-      html: `<div style="width:${isVisited ? 14 : 10}px;height:${isVisited ? 14 : 10}px;background:${isVisited ? '#78BE20' : color};border-radius:50%;border:2px solid ${isVisited ? '#fff' : 'rgba(255,255,255,0.4)'};box-shadow:0 0 ${isVisited ? '8px #78BE2088' : '4px rgba(0,0,0,0.5)'};cursor:pointer;"></div>`,
-      iconSize: [isVisited ? 14 : 10, isVisited ? 14 : 10], iconAnchor: [isVisited ? 7 : 5, isVisited ? 7 : 5],
-    });
-    const marker = L.marker([b.lat, b.lng], { icon }).addTo(map).bindPopup(`
-      <div class="map-popup-name">${b.name}</div>
-      <div class="map-popup-city">${b.city}, ${b.province}</div>
-      ${isVisited ? '<div class="map-popup-visited">🚙 Visited</div>' : ''}
-      <button class="map-popup-btn" onclick="openModal('${b.id}')">Details</button>
-      <a class="map-popup-btn" href="https://maps.google.com/?q=${b.lat},${b.lng}" target="_blank">Directions</a>
-    `, { maxWidth: 220 });
-    mapMarkers.push(marker);
-  });
-  if (filtered.length > 0) map.fitBounds(L.latLngBounds(filtered.map(b => [b.lat, b.lng])), { padding: [40, 40] });
-}
-
-// ═══════════════════════════════════════════════════════
-// ROUTE PLANNER
-// ═══════════════════════════════════════════════════════
-async function geocode(place) {
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&limit=1`, { headers: { 'Accept-Language': 'en' } });
-  const data = await res.json();
-  if (!data.length) throw new Error(`Could not find "${place}"`);
-  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
-}
-
-function distToSegment(pLat, pLng, aLat, aLng, bLat, bLng) {
-  const dx = bLng - aLng, dy = bLat - aLat, lenSq = dx * dx + dy * dy;
-  if (lenSq === 0) return haversine(pLat, pLng, aLat, aLng);
-  let t = ((pLng - aLng) * dx + (pLat - aLat) * dy) / lenSq;
-  t = Math.max(0, Math.min(1, t));
-  return haversine(pLat, pLng, aLat + t * dy, aLng + t * dx);
-}
-
-async function planRoute() {
-  const fromStr = document.getElementById('routeFrom').value.trim();
-  const toStr = document.getElementById('routeTo').value.trim();
-  if (!fromStr || !toStr) { alert('Please enter both a start and end city.'); return; }
-  const status = document.getElementById('routeStatus');
-  status.textContent = 'Geocoding…';
-  try {
-    const [from, to] = await Promise.all([geocode(fromStr), geocode(toStr)]);
-    routeLine = { from, to }; routeActive = true;
-    const totalKm = Math.round(haversine(from.lat, from.lng, to.lat, to.lng));
-    status.innerHTML = `${from.name} → ${to.name} <span class="route-km-badge">${totalKm.toLocaleString()} km straight-line</span>`;
-    document.getElementById('routeClearBtn').style.display = 'inline-block';
-    render();
-    if (currentView === 'map' && map && typeof L !== 'undefined') {
-      if (window._routePolyline) map.removeLayer(window._routePolyline);
-      window._routePolyline = L.polyline([[from.lat, from.lng], [to.lat, to.lng]], { color: '#78BE20', weight: 3, dashArray: '8,6', opacity: 0.7 }).addTo(map);
-      map.fitBounds([[from.lat, from.lng], [to.lat, to.lng]], { padding: [60, 60] });
-    }
-  } catch (e) { status.textContent = e.message; }
-}
-
-function clearRoute() {
-  routeActive = false; routeLine = null;
-  document.getElementById('routeStatus').textContent = '';
-  document.getElementById('routeClearBtn').style.display = 'none';
-  if (window._routePolyline && map) map.removeLayer(window._routePolyline);
+  localStorage.setItem('visitedBreweries', JSON.stringify([...visitedSet]));
+  updateVisitedStat();
+  const btn = document.getElementById('visitedBtn');
+  if (btn) {
+    btn.textContent = visitedSet.has(id) ? '✅ Visited!' : '🚙 Mark Visited';
+    btn.classList.toggle('marked', visitedSet.has(id));
+  }
   render();
 }
 
-// ── VISITED LIST ────────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// VISITED LIST
+// ─────────────────────────────────────────────────────
 function showVisitedList() {
   const visited = allBreweries.filter(b => visitedSet.has(b.id)).sort((a, b) => {
     if (a.province !== b.province) return a.province.localeCompare(b.province);
@@ -312,8 +235,9 @@ function showVisitedList() {
     'ON': 'Ontario', 'BC': 'British Columbia', 'AB': 'Alberta', 'QC': 'Quebec',
     'MB': 'Manitoba', 'SK': 'Saskatchewan', 'NS': 'Nova Scotia', 'NB': 'New Brunswick',
     'PE': 'Prince Edward Island', 'NL': 'Newfoundland & Labrador',
-    'AL': 'Alabama', 'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio', 'KY': 'Kentucky', 'TN': 'Tennessee',
-    'WV': 'West Virginia', 'VA': 'Virginia', 'NC': 'North Carolina', 'SC': 'South Carolina', 'GA': 'Georgia', 'FL': 'Florida'
+    'AL': 'Alabama', 'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio',
+    'KY': 'Kentucky', 'TN': 'Tennessee', 'WV': 'West Virginia', 'VA': 'Virginia',
+    'NC': 'North Carolina', 'SC': 'South Carolina', 'GA': 'Georgia', 'FL': 'Florida'
   };
   if (!visited.length) {
     document.getElementById('visitedListContent').innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No visited breweries yet.</p>';
@@ -356,23 +280,121 @@ function closeVisitedList(event) {
   }
 }
 
-// ── KEYBOARD SHORTCUTS ──────────────────────────────────
+// ─────────────────────────────────────────────────────
+// MAP VIEW
+// ─────────────────────────────────────────────────────
+function setView(view) {
+  currentView = view;
+  const gridWrap = document.getElementById('gridWrap');
+  const mapView = document.getElementById('mapView');
+  const btnGrid = document.getElementById('btnGrid');
+  const btnMap = document.getElementById('btnMap');
+  const routeBar = document.getElementById('routePlanner');
+  if (view === 'map') {
+    gridWrap.classList.add('hidden'); mapView.classList.add('active');
+    btnGrid.classList.remove('active'); btnMap.classList.add('active');
+    routeBar.classList.add('active');
+    initMap(); renderMap();
+  } else {
+    gridWrap.classList.remove('hidden'); mapView.classList.remove('active');
+    btnGrid.classList.add('active'); btnMap.classList.remove('active');
+    routeBar.classList.remove('active');
+    render();
+  }
+}
+
+function initMap() {
+  if (map) return;
+  map = L.map('mapView').setView([44.5, -76.5], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CARTO', maxZoom: 19 }).addTo(map);
+  renderMap();
+}
+
+function renderMap() {
+  if (!map || typeof L === 'undefined') return;
+  mapMarkers.forEach(m => map.removeLayer(m));
+  mapMarkers = [];
+  const filtered = getFiltered().filter(b => b.lat && b.lng);
+  filtered.forEach(b => {
+    const color = PROV_COLORS[b.province] || '#78BE20';
+    const isVisited = visitedSet.has(b.id);
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:${isVisited ? 14 : 10}px;height:${isVisited ? 14 : 10}px;background:${isVisited ? '#78BE20' : color};border-radius:50%;border:2px solid ${isVisited ? '#fff' : 'rgba(255,255,255,0.4)'};box-shadow:0 0 ${isVisited ? '8px #78BE2088' : '4px rgba(0,0,0,0.5)'};cursor:pointer;"></div>`,
+      iconSize: [isVisited ? 14 : 10, isVisited ? 14 : 10],
+      iconAnchor: [isVisited ? 7 : 5, isVisited ? 7 : 5]
+    });
+    const marker = L.marker([b.lat, b.lng], { icon }).addTo(map);
+    marker.on('click', () => openModal(b.id));
+    mapMarkers.push(marker);
+  });
+}
+
+// ─────────────────────────────────────────────────────
+// ROUTE PLANNER
+// ─────────────────────────────────────────────────────
+function distToSegment(lat, lng, lat1, lng1, lat2, lng2) {
+  const dx = lat2 - lat1, dy = lng2 - lng1;
+  const lenSq = dx * dx + dy * dy;
+  let t = lenSq ? ((lat - lat1) * dx + (lng - lng1) * dy) / lenSq : 0;
+  t = Math.max(0, Math.min(1, t));
+  const nearLat = lat1 + t * dx, nearLng = lng1 + t * dy;
+  return haversine(lat, lng, nearLat, nearLng);
+}
+
+async function geocode(place) {
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&limit=1`);
+  const data = await res.json();
+  if (!data.length) throw new Error(`Could not find "${place}"`);
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
+}
+
+async function planRoute() {
+  const fromStr = document.getElementById('routeFrom').value.trim();
+  const toStr = document.getElementById('routeTo').value.trim();
+  if (!fromStr || !toStr) { alert('Enter both a start and end location.'); return; }
+  const status = document.getElementById('routeStatus');
+  status.textContent = 'Geocoding…';
+  try {
+    const [from, to] = await Promise.all([geocode(fromStr), geocode(toStr)]);
+    routeLine = { from, to }; routeActive = true;
+    const totalKm = Math.round(haversine(from.lat, from.lng, to.lat, to.lng));
+    status.innerHTML = `${from.name} → ${to.name} <span class="route-km-badge">${totalKm.toLocaleString()} km straight-line</span>`;
+    document.getElementById('routeClearBtn').style.display = 'inline-block';
+    render();
+    if (currentView === 'map' && map && typeof L !== 'undefined') {
+      if (window._routePolyline) map.removeLayer(window._routePolyline);
+      window._routePolyline = L.polyline([[from.lat, from.lng], [to.lat, to.lng]], { color: '#78BE20', weight: 3, dashArray: '8,6', opacity: 0.7 }).addTo(map);
+      map.fitBounds([[from.lat, from.lng], [to.lat, to.lng]], { padding: [60, 60] });
+    }
+  } catch (e) { status.textContent = e.message; }
+}
+
+function clearRoute() {
+  routeActive = false; routeLine = null;
+  document.getElementById('routeStatus').textContent = '';
+  document.getElementById('routeClearBtn').style.display = 'none';
+  if (window._routePolyline && map) map.removeLayer(window._routePolyline);
+  render();
+}
+
+// ─────────────────────────────────────────────────────
+// KEYBOARD SHORTCUTS
+// ─────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { 
-    document.getElementById('modalOverlay')?.classList.remove('open'); 
-    document.body.style.overflow = ''; 
+  if (e.key === 'Escape') {
+    document.getElementById('modalOverlay')?.classList.remove('open');
+    document.body.style.overflow = '';
   }
 });
 
 // ═══════════════════════════════════════════════════════
 // Initialize after DOM is loaded
 // ═══════════════════════════════════════════════════════
-// Wait for BOTH DOMContentLoaded AND all scripts to be loaded
 function startApp() {
-  // Double-check critical elements exist
-  if (!document.getElementById('breweryGrid') || 
+  if (!document.getElementById('breweryGrid') ||
       !document.getElementById('searchInput')) {
-    setTimeout(startApp, 50); // Retry in 50ms
+    setTimeout(startApp, 50);
     return;
   }
   init();
@@ -381,6 +403,5 @@ function startApp() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', startApp);
 } else {
-  // DOM already loaded, but wait a tick to ensure all elements are ready
   setTimeout(startApp, 0);
 }

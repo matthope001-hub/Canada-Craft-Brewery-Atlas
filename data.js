@@ -8,6 +8,13 @@ let currentView = 'grid';
 let routeActive = false;
 let routeLine = null;
 
+// Helper — parse TRUE/FALSE/Yes/1 from sheet cells
+function parseBool(v) {
+  if (!v) return false;
+  const s = String(v).toLowerCase().trim();
+  return s === 'true' || s === 'yes' || s === '1';
+}
+
 async function init() {
   // ── STEP 1: Load Canadian breweries from Sheet ──────
   try {
@@ -25,30 +32,55 @@ async function init() {
       });
       return {
         id: obj.id || `can_${Math.random().toString(36).substr(2, 9)}`,
-        name: obj.brewery_name || obj.name,
-        province: obj.province, city: obj.city, region: obj.city, type: 'micro',
-        lat: parseFloat(obj.lat) || 0, lng: parseFloat(obj.lng) || 0,
+        name: obj.brewery_name || obj.name || '',
+        legal_name: obj.legal_name || '',
+        province: obj.province || '',
+        city: obj.city || '',
+        region: obj.region || obj.city || '',
+        type: obj.type || 'micro',
+        lat: parseFloat(obj.lat) || 0,
+        lng: parseFloat(obj.lng) || 0,
         address: obj.street_address || obj.address || '',
         postal: obj.postal_code || obj.postal || '',
-        phone: obj.phone || '', website: obj.website || '',
-        instagram: obj.instagram || '', facebook: obj.facebook || '', email: obj.email || '',
-        founded: obj.founded || '', status: obj.status || 'active',
+        phone: obj.phone || '',
+        website: obj.website || '',
+        instagram: obj.instagram || '',
+        facebook: obj.facebook || '',
+        email: obj.email || '',
+        founded: obj.founded || '',
+        status: obj.status || 'active',
         data_source: obj.data_source || '',
-        visited: obj.visited === 'TRUE' || obj.visited === true || obj.visited === 'Yes',
+        verified: obj.verified || '',
+        verified_date: obj.verified_date || '',
+        notes: obj.notes || '',
+        jeep_post: obj.jeep_post || '',
+        styles: obj.styles || '',
+        visited: parseBool(obj.visited),
         visit_date: obj.visit_date || '',
-        taproom:false, patio:false, kitchen:false, pet:false, tours:false, accessible:false,
-        ocb_member:false, styles:''
+        // ── Read boolean feature columns from sheet ──
+        taproom:    parseBool(obj.taproom),
+        patio:      parseBool(obj.patio),
+        kitchen:    parseBool(obj.kitchen),
+        pet:        parseBool(obj.pet),
+        tours:      parseBool(obj.tours),
+        accessible: parseBool(obj.accessible),
+        ocb_member: parseBool(obj.ocb_member),
       };
     });
-    allBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
+
+    // ── PERMISSIVE filter: only exclude explicitly 'closed' rows ──
+    allBreweries = rows.filter(b =>
+      b.name && b.name.trim() !== '' &&
+      b.status.toLowerCase() !== 'closed'
+    );
     allBreweries.forEach(b => { if (b.visited) visitedSet.add(b.id); });
-    console.log(`Loaded ${allBreweries.length} Canadian breweries`);
+    console.log(`✅ Loaded ${allBreweries.length} Canadian breweries`);
   } catch(e) {
     console.warn('Sheet load failed — using sample data:', e);
     allBreweries = SAMPLE_DATA;
   }
 
-  // ── STEP 2: Render Canadian breweries immediately ───
+  // ── STEP 2: Render immediately ───
   updateStats();
   render();
   updateDashboard();
@@ -77,24 +109,44 @@ async function loadUSBreweries() {
       });
       return {
         id: obj.id || `us_${Math.random().toString(36).substr(2, 9)}`,
-        name: obj.brewery_name || obj.name,
-        province: obj.province, city: obj.city, region: obj.city, type: 'micro',
-        lat: parseFloat(obj.lat) || 0, lng: parseFloat(obj.lng) || 0,
+        name: obj.brewery_name || obj.name || '',
+        legal_name: obj.legal_name || '',
+        province: obj.province || '',
+        city: obj.city || '',
+        region: obj.region || obj.city || '',
+        type: obj.type || 'micro',
+        lat: parseFloat(obj.lat) || 0,
+        lng: parseFloat(obj.lng) || 0,
         address: obj.street_address || obj.address || '',
         postal: obj.postal_code || obj.postal || '',
-        phone: obj.phone || '', website: obj.website || '',
-        instagram: obj.instagram || '', facebook: obj.facebook || '', email: obj.email || '',
-        founded: obj.founded || '', status: obj.status || 'active',
+        phone: obj.phone || '',
+        website: obj.website || '',
+        instagram: obj.instagram || '',
+        facebook: obj.facebook || '',
+        email: obj.email || '',
+        founded: obj.founded || '',
+        status: obj.status || 'active',
         data_source: obj.data_source || '',
-        visited: obj.visited === 'TRUE' || obj.visited === true || obj.visited === 'Yes',
+        notes: obj.notes || '',
+        jeep_post: obj.jeep_post || '',
+        styles: obj.styles || '',
+        visited: parseBool(obj.visited),
         visit_date: obj.visit_date || '',
-        taproom:false, patio:false, kitchen:false, pet:false, tours:false, accessible:false,
-        ocb_member:false, styles:''
+        taproom:    parseBool(obj.taproom),
+        patio:      parseBool(obj.patio),
+        kitchen:    parseBool(obj.kitchen),
+        pet:        parseBool(obj.pet),
+        tours:      parseBool(obj.tours),
+        accessible: parseBool(obj.accessible),
+        ocb_member: parseBool(obj.ocb_member),
       };
     });
-    const usBreweries = rows.filter(b => b.name && (!b.status || b.status.toLowerCase() === 'active'));
 
-    // Add sheet breweries (manual additions), then continue to also load API
+    const usBreweries = rows.filter(b =>
+      b.name && b.name.trim() !== '' &&
+      b.status.toLowerCase() !== 'closed'
+    );
+
     if (usBreweries.length > 0) {
       usBreweries.forEach(b => { if (b.visited) visitedSet.add(b.id); });
       allBreweries = [...allBreweries, ...usBreweries];
@@ -104,16 +156,16 @@ async function loadUSBreweries() {
       updateDashboard();
       if (currentView === 'map') renderMap();
     } else {
-      console.log('⚠️ US_Breweries sheet is empty');
+      console.log('⚠️ US_Breweries sheet is empty — loading from API');
     }
   } catch(e) {
     console.warn('⚠️ US_Breweries sheet load failed:', e);
   }
 
-  // ── STEP 2: Also load from API (merges with sheet data above) ──────────
+  // ── STEP 2: Load from Open Brewery DB API ──────────
   const cached = getCachedUS();
   if (cached) {
-    console.log(`📦 US cache hit — ${cached.length} breweries (skipping API calls)`);
+    console.log(`📦 US cache hit — ${cached.length} breweries`);
     allBreweries = [...allBreweries, ...cached];
     updateStats();
     render();
@@ -132,19 +184,23 @@ async function loadUSBreweries() {
           .then(r => r.json()).catch(() => [])
       ));
       return results.flat().map(b => ({
-        id: 'us_' + b.id, name: b.name, province: code, city: b.city, region: b.state,
-        type: b.brewery_type, lat: parseFloat(b.latitude) || 0, lng: parseFloat(b.longitude) || 0,
-        address: b.street || '', postal: b.postal_code || '', phone: b.phone || '',
-        website: b.website_url || '', styles: '', founded: '', ocb_member: false,
-        taproom:true, patio:false, kitchen:false, pet:false, tours:false, accessible:false,
-        status: 'active', notes: `Open Brewery DB · ${b.brewery_type}`
+        id: 'us_' + b.id, name: b.name, province: code,
+        city: b.city, region: b.state, type: b.brewery_type,
+        lat: parseFloat(b.latitude) || 0, lng: parseFloat(b.longitude) || 0,
+        address: b.street || '', postal: b.postal_code || '',
+        phone: b.phone || '', website: b.website_url || '',
+        styles: '', founded: '', ocb_member: false,
+        taproom: true, patio: false, kitchen: false,
+        pet: false, tours: false, accessible: false,
+        status: 'active', notes: `Open Brewery DB · ${b.brewery_type}`,
+        visited: false, visit_date: ''
       })).filter(b => b.name && b.lat && b.lng);
     });
 
     const usBreweries = (await Promise.all(fetches)).flat();
     setCachedUS(usBreweries);
     allBreweries = [...allBreweries, ...usBreweries];
-    console.log(`✅ Loaded ${usBreweries.length} US breweries from API — cached for 24h`);
+    console.log(`✅ Loaded ${usBreweries.length} US breweries from API`);
     updateStats();
     render();
     if (currentView === 'map') renderMap();
@@ -152,14 +208,12 @@ async function loadUSBreweries() {
     console.warn('❌ US brewery API fetch failed:', e);
   }
 
-  // ── STEP 3: Fill gaps from OpenStreetMap (Overpass) ──────────
   loadOverpassBreweries();
 }
 
 // ═══════════════════════════════════════════════════════
-// OPENSTREETMAP / OVERPASS — fills gaps OBD misses
+// OPENSTREETMAP / OVERPASS
 // ═══════════════════════════════════════════════════════
-// Bounding boxes [south, west, north, east] per state for Overpass queries.
 const STATE_BBOX = {
   AL:[30.14,-88.47,35.01,-84.89],
   NY:[40.50,-79.76,45.02,-71.86], PA:[39.72,-80.52,42.27,-74.69],
@@ -170,44 +224,35 @@ const STATE_BBOX = {
   FL:[24.40,-87.63,31.00,-80.03]
 };
 
-// Normalize a name for comparison: lowercase, strip punctuation and common suffixes
 function normName(n) {
-  return (n || '')
-    .toLowerCase()
+  return (n || '').toLowerCase()
     .replace(/&/g, 'and')
     .replace(/\b(brewing|brewery|breweries|company|co|llc|inc|the|taproom|beer|ales?|craft)\b/g, '')
-    .replace(/[^a-z0-9]/g, '')
-    .trim();
+    .replace(/[^a-z0-9]/g, '').trim();
 }
 
-// Is this OSM brewery already covered by an existing one?
-// Duplicate if same normalized name AND within ~150m, OR exact normalized name match in same city.
 function isDuplicate(osm, existing) {
   const osmN = normName(osm.name);
-  if (!osmN) return true; // unnamed → skip
+  if (!osmN) return true;
   return existing.some(b => {
     if (b.province !== osm.province) return false;
     const bN = normName(b.name);
     if (!bN) return false;
     const nameMatch = bN === osmN || bN.includes(osmN) || osmN.includes(bN);
     if (!nameMatch) return false;
-    // name matches — confirm with proximity if both have coords
     if (b.lat && b.lng && osm.lat && osm.lng) {
-      return haversine(b.lat, b.lng, osm.lat, osm.lng) < 0.15; // 150m
+      return haversine(b.lat, b.lng, osm.lat, osm.lng) < 0.15;
     }
-    return true; // name matches and no coords to disprove
+    return true;
   });
 }
 
 async function loadOverpassBreweries() {
-  // Cache check — reuse OSM results for 24h to avoid slow re-fetches
   const cachedOSM = getCachedOSM();
   if (cachedOSM) {
-    console.log(`📦 OSM cache hit — ${cachedOSM.length} breweries (skipping Overpass)`);
+    console.log(`📦 OSM cache hit — ${cachedOSM.length} breweries`);
     allBreweries = [...allBreweries, ...cachedOSM];
-    updateStats();
-    render();
-    updateDashboard();
+    updateStats(); render(); updateDashboard();
     if (currentView === 'map') renderMap();
     return;
   }
@@ -216,13 +261,10 @@ async function loadOverpassBreweries() {
     const codes = Object.keys(STATE_BBOX);
     const fetches = codes.map(async code => {
       const [s,w,n,e] = STATE_BBOX[code];
-      let json = null;
       try {
         const res = await fetch(`/api/overpass?bbox=${s},${w},${n},${e}`);
-        if (res.ok) json = await res.json();
-      } catch { /* proxy unavailable */ }
-      if (!json || !json.elements) return [];
-      try {
+        if (!res.ok) return [];
+        const json = await res.json();
         return (json.elements || []).map(el => {
           const t = el.tags || {};
           const lat = el.lat || (el.center && el.center.lat);
@@ -232,18 +274,18 @@ async function loadOverpassBreweries() {
             city: t['addr:city'] || '', region: t['addr:city'] || '',
             type: 'micro', lat: parseFloat(lat)||0, lng: parseFloat(lng)||0,
             address: [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),
-            postal: t['addr:postcode'] || '', phone: t.phone || t['contact:phone'] || '',
-            website: t.website || t['contact:website'] || '',
-            styles:'', founded:'', ocb_member:false,
-            taproom:true, patio:false, kitchen:false, pet:false, tours:false, accessible:false,
-            status:'active', notes:'OpenStreetMap'
+            postal: t['addr:postcode'] || '', phone: t.phone || '',
+            website: t.website || '', styles: '', founded: '',
+            ocb_member: false, taproom: true, patio: false, kitchen: false,
+            pet: false, tours: false, accessible: false,
+            status: 'active', notes: 'OpenStreetMap',
+            visited: false, visit_date: ''
           };
         }).filter(b => b.name && b.lat && b.lng);
       } catch { return []; }
     });
 
     const osmAll = (await Promise.all(fetches)).flat();
-    // Dedup against what we already loaded, and against each other
     const added = [];
     osmAll.forEach(o => {
       if (!isDuplicate(o, allBreweries) && !isDuplicate(o, added)) added.push(o);
@@ -252,13 +294,9 @@ async function loadOverpassBreweries() {
     if (added.length) {
       setCachedOSM(added);
       allBreweries = [...allBreweries, ...added];
-      console.log(`✅ Added ${added.length} unique breweries from OpenStreetMap (skipped ${osmAll.length - added.length} duplicates)`);
-      updateStats();
-      render();
-      updateDashboard();
+      console.log(`✅ Added ${added.length} unique breweries from OpenStreetMap`);
+      updateStats(); render(); updateDashboard();
       if (currentView === 'map') renderMap();
-    } else {
-      console.log(`OpenStreetMap: no new breweries (${osmAll.length} all duplicates)`);
     }
   } catch(e) {
     console.warn('❌ Overpass fetch failed:', e);

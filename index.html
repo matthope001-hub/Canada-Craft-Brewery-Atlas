@@ -362,8 +362,9 @@
     #visitedListOverlay {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,.65); z-index: 3000;
-      align-items: flex-end; justify-content: center;
+      justify-content: center; align-items: flex-end;
     }
+    #visitedListOverlay.open { display: flex; }
     #visitedListModal {
       background: #fff; border-radius: 20px 20px 0 0;
       width: 100%; max-width: 640px;
@@ -431,9 +432,9 @@
     <div class="stat-num" id="statShowing">—</div>
     <div class="stat-label">Showing</div>
   </div>
-  <div class="stat">
+  <div class="stat" onclick="showVisitedList()" style="cursor:pointer;">
     <div class="stat-num" id="statVisited">0</div>
-    <div class="stat-label">Visited</div>
+    <div class="stat-label">Visited ↗</div>
   </div>
 </div>
 

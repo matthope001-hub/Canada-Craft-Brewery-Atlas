@@ -270,13 +270,13 @@ function showVisitedList() {
     document.getElementById('visitedListContent').innerHTML = html;
   }
   const overlay = document.getElementById('visitedListOverlay');
-  if (overlay) { overlay.style.display = 'flex'; overlay.classList.add('open'); }
+  if (overlay) { overlay.classList.add('open'); }
 }
 
 function closeVisitedList(event) {
   if (!event || event.target.id === 'visitedListOverlay') {
     const overlay = document.getElementById('visitedListOverlay');
-    overlay.style.display = 'none'; overlay.classList.remove('open');
+    overlay.classList.remove('open');
   }
 }
 

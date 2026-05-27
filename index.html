@@ -574,7 +574,7 @@
         <img src="/jeep_icon.png" style="width:24px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px;">
         Visited Breweries
       </h2>
-      <button onclick="closeVisitedList(event)" style="background:none;border:none;font-size:28px;cursor:pointer;line-height:1;color:#999;">×</button>
+      <button onclick="document.getElementById('visitedListOverlay').classList.remove('open')" style="background:none;border:none;font-size:28px;cursor:pointer;line-height:1;color:#999;">×</button>
     </div>
     <div id="visitedListContent"></div>
   </div>

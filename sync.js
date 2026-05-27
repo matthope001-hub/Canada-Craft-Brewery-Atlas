@@ -79,22 +79,20 @@ async function loadVisitedFromCloud() {
   try {
     const response = await fetch(`${API_URL}?action=get_visited`);
     const data = await response.json();
-    if (data.success && data.visited && data.visited.length) {
-      let changed = false;
+    if (data.success && data.visited) {
+      // Cloud is the source of truth — reset visitedSet from cloud data
+      visitedSet.clear();
       data.visited.forEach(v => {
         const brewery = allBreweries.find(b => b.name === v.name);
-        if (brewery && !visitedSet.has(brewery.id)) {
+        if (brewery) {
           visitedSet.add(brewery.id);
           if (v.visit_date) brewery.visit_date = v.visit_date;
-          changed = true;
         }
       });
-      if (changed) {
-        saveVisited();
-        updateVisitedStat();
-        updateDashboard();
-        render();
-      }
+      saveVisited();
+      updateVisitedStat();
+      updateDashboard();
+      render();
     }
   } catch(e) {
     console.warn('Could not load visited from cloud:', e);

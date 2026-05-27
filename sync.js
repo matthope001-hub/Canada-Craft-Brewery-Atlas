@@ -14,8 +14,7 @@ async function toggleVisited(id, event) {
   if (!brewery) return;
   const isNowVisited = !visitedSet.has(id);
   if (isNowVisited) {
-    await autoGeocodeIfNeeded(brewery);
-    visitedSet.add(id);
+    visitedSet.add(id);          // save FIRST — don't let geocoding block it
   } else {
     visitedSet.delete(id);
   }
@@ -28,8 +27,12 @@ async function toggleVisited(id, event) {
     btn.textContent = isNowVisited ? '✅ Visited!' : '🚙 Mark Visited';
     btn.classList.toggle('marked', isNowVisited);
   }
+  // Geocode in the background, wrapped so a failure can't break the check-in
+  if (isNowVisited) {
+    try { await autoGeocodeIfNeeded(brewery); } catch (e) { console.warn('geocode skipped:', e); }
+  }
   if (USE_CLOUD_SYNC && API_URL !== 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-    await syncVisitedToCloud(brewery.name, isNowVisited);
+    await syncVisitedToCloud(brewery, isNowVisited);
   } else {
     updateSyncStatus(isNowVisited ? 'marked-local' : 'unmarked-local');
   }

@@ -48,24 +48,22 @@ async function toggleVisited(id, event) {
 
 async function syncVisitedToCloud(brewery, visited) {
   try {
-    await fetch(API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        brewery: brewery.name,
-        visited,
-        province: brewery.province,
-        city: brewery.city,
-        address: brewery.address,
-        postal: brewery.postal,
-        phone: brewery.phone,
-        website: brewery.website,
-        lat: brewery.lat,
-        lng: brewery.lng,
-        id: brewery.id
-      })
+    // Use GET with params — Apps Script doGet handles this without CORS issues
+    const params = new URLSearchParams({
+      action: 'mark_visited',
+      brewery: brewery.name,
+      visited: visited ? 'TRUE' : 'FALSE',
+      province: brewery.province || '',
+      city: brewery.city || '',
+      address: brewery.address || '',
+      postal: brewery.postal || '',
+      phone: brewery.phone || '',
+      website: brewery.website || '',
+      lat: brewery.lat || '',
+      lng: brewery.lng || '',
+      id: brewery.id || ''
     });
+    await fetch(`${API_URL}?${params.toString()}`, { method: 'GET' });
     updateSyncStatus(visited ? 'marked-cloud' : 'unmarked-cloud');
   } catch(e) {
     console.warn('Cloud sync failed:', e);

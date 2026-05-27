@@ -289,7 +289,7 @@ function showVisitedList() {
 }
 
 function closeVisitedList(event) {
-  if (!event || event.target.id === 'visitedListOverlay') {
+  if (!event || event.target.id === 'visitedListOverlay' || event.target.tagName === 'BUTTON') {
     const overlay = document.getElementById('visitedListOverlay');
     overlay.classList.remove('open');
   }

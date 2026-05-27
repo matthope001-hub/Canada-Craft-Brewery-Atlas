@@ -27,7 +27,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── COMPACT HERO ── */
   .hero {
     background: var(--black);
     padding: 20px 16px 18px;
@@ -67,7 +66,6 @@
     text-transform: uppercase;
   }
 
-  /* ── STATS BAR ── */
   .stats-bar {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -94,7 +92,6 @@
     margin-top: 2px;
   }
 
-  /* ── STICKY CONTROLS ── */
   .controls {
     position: sticky;
     top: 0;
@@ -105,7 +102,6 @@
     box-shadow: 0 2px 12px rgba(0,0,0,.06);
   }
 
-  /* Search */
   .search-wrap {
     position: relative;
     margin-bottom: 10px;
@@ -134,7 +130,6 @@
   .search-wrap input:focus { border-color: var(--green); }
   .search-wrap input::placeholder { color: #bbb; }
 
-  /* Selects row */
   .selects-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -156,7 +151,6 @@
     cursor: pointer;
   }
 
-  /* View toggle + count */
   .view-row {
     display: flex;
     align-items: center;
@@ -196,7 +190,6 @@
   }
   .count strong { color: var(--black); }
 
-  /* Filters — horizontal scroll */
   .filters-scroll {
     display: grid;
     grid-template-columns: repeat(4, auto);
@@ -228,7 +221,6 @@
     color: #fff;
   }
 
-  /* ── CARD LIST ── */
   .list {
     padding: 12px 16px;
     display: flex;
@@ -312,7 +304,6 @@
     gap: 3px;
   }
 
-  /* ── BOTTOM NAV ── */
   .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -342,23 +333,19 @@
     transition: color .15s;
   }
   .nav-item.active { color: var(--green); }
-  .nav-item.active .jeep-icon { filter: none; }
   .nav-item svg { width: 22px; height: 22px; }
 
-  /* spacer for bottom nav */
   .bottom-spacer { height: 80px; }
 </style>
 </head>
 <body>
 
-<!-- HERO -->
 <div class="hero">
   <div class="hero-label"><span>🍁</span> Thelma's Trail Guide</div>
   <h1>Canada <em>Craft</em><br>Brewery Atlas</h1>
   <p class="hero-sub">Every independent brewery · Every province</p>
 </div>
 
-<!-- STATS BAR -->
 <div class="stats-bar">
   <div class="stat">
     <div class="stat-num">2450</div>
@@ -378,7 +365,6 @@
   </div>
 </div>
 
-<!-- STICKY CONTROLS -->
 <div class="controls">
   <div class="search-wrap">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -414,9 +400,7 @@
       </button>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button class="chip" id="visited-btn" style="height:32px;font-size:13px;display:flex;align-items:center;gap:6px;">
-        <img src="/mnt/user-data/uploads/1000006490.jpg" style="width:20px;height:16px;object-fit:contain;"> Visited
-      </button>
+      <button class="chip" id="visited-btn" style="height:32px;font-size:13px;">🚗 Visited</button>
       <span class="count">Showing <strong>34</strong></span>
     </div>
   </div>
@@ -429,13 +413,10 @@
     <button class="chip">🚌 Tours</button>
     <button class="chip">♿ Accessible</button>
     <button class="chip">✓ Guild Member</button>
-
   </div>
 </div>
 
-<!-- CARD LIST -->
 <div class="list">
-
   <div class="brewery-card">
     <div class="card-top">
       <div class="card-location"><div class="state-dot"></div>AL · Alabama</div>
@@ -500,12 +481,10 @@
       <span class="tag">🚌 Tours</span>
     </div>
   </div>
-
 </div>
 
 <div class="bottom-spacer"></div>
 
-<!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="nav-item active">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -516,7 +495,7 @@
     Map
   </button>
   <button class="nav-item">
-    <img src="/mnt/user-data/uploads/1000006490.jpg" style="width:28px;height:22px;object-fit:contain;filter:grayscale(1) brightness(1.5);" class="jeep-icon">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
     Visited
   </button>
   <button class="nav-item">
@@ -526,20 +505,15 @@
 </nav>
 
 <script>
-  // Filter chip toggle
   document.querySelectorAll('.chip').forEach(c => {
     c.addEventListener('click', () => c.classList.toggle('active'));
   });
-
-  // View toggle
   document.querySelectorAll('.toggle button').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('.toggle button').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
     });
   });
-
-  // Nav toggle
   document.querySelectorAll('.nav-item').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));

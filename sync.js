@@ -48,6 +48,10 @@ async function syncVisitedToCloud(brewery, visited) {
         visited,
         province: brewery.province,
         city: brewery.city,
+        address: brewery.address,
+        postal: brewery.postal,
+        phone: brewery.phone,
+        website: brewery.website,
         lat: brewery.lat,
         lng: brewery.lng,
         id: brewery.id
@@ -99,18 +103,20 @@ function updateSyncStatus(status) {
     box-shadow:0 2px 10px rgba(0,0,0,0.2);z-index:10000;font-size:14px;
     animation:slideIn 0.3s ease-out;`;
   document.body.appendChild(notification);
-  setTimeout(() => { 
-    notification.style.animation = 'slideOut 0.3s ease-out'; 
-    setTimeout(() => notification.remove(), 300); 
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
   }, 2000);
 }
 
 async function autoGeocodeIfNeeded(brewery) {
   if (brewery.lat === 0 || brewery.lng === 0) {
+    // Use the brewery's actual country so US breweries aren't geocoded as Canadian.
+    const country = isUSProvince(brewery.province) ? 'USA' : 'Canada';
     const queries = [
-      brewery.address ? `${brewery.address}, ${brewery.city}, ${brewery.province}, Canada` : null,
-      `${brewery.name}, ${brewery.city}, ${brewery.province}, Canada`,
-      `${brewery.city}, ${brewery.province}, Canada`
+      brewery.address ? `${brewery.address}, ${brewery.city}, ${brewery.province}, ${country}` : null,
+      `${brewery.name}, ${brewery.city}, ${brewery.province}, ${country}`,
+      `${brewery.city}, ${brewery.province}, ${country}`
     ].filter(q => q);
     for (const query of queries) {
       try {
@@ -132,6 +138,11 @@ async function autoGeocodeIfNeeded(brewery) {
     }
   }
   return false;
+}
+
+// True if the province code is actually a US state (from US_STATES in config.js).
+function isUSProvince(code) {
+  return typeof US_STATES !== 'undefined' && US_STATES.hasOwnProperty(code);
 }
 
 async function syncToGoogleSheets(brewery) {

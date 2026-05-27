@@ -102,10 +102,16 @@ function render() {
         if (match) {
           visitDate = `${String(parseInt(match[2]) + 1).padStart(2, '0')}/${String(match[3]).padStart(2, '0')}/${match[1].slice(-2)}`;
         }
+      } else if (dateStr.includes('T')) {
+        // ISO timestamp e.g. 2026-05-27T07:00:00.000Z
+        const d = new Date(dateStr);
+        if (!isNaN(d)) visitDate = `${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCFullYear()).slice(-2)}`;
       } else if (dateStr.includes('-')) {
         const p = dateStr.split('-');
         if (p.length === 3) visitDate = `${p[1]}/${p[2]}/${p[0].slice(-2)}`;
-      } else if (dateStr.includes('/')) { visitDate = dateStr; }
+      } else if (dateStr.includes('/')) {
+        visitDate = dateStr;
+      }
     }
     return `
     <div class="card ${isVisited ? 'visited' : ''}" style="--province-color:${color}" onclick="openModal('${b.id}')">
@@ -270,8 +276,12 @@ function showVisitedList() {
         if (dateStr.startsWith('Date(')) {
           const match = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
           if (match) visitDate = `${String(parseInt(match[2]) + 1).padStart(2, '0')}/${String(match[3]).padStart(2, '0')}/${match[1].slice(-2)}`;
-        } else if (dateStr.includes('-')) { const p = dateStr.split('-'); if (p.length === 3) visitDate = `${p[1]}/${p[2]}/${p[0].slice(-2)}`; }
-        else { visitDate = dateStr; }
+        } else if (dateStr.includes('T')) {
+          const d = new Date(dateStr);
+          if (!isNaN(d)) visitDate = `${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCFullYear()).slice(-2)}`;
+        } else if (dateStr.includes('-')) {
+          const p = dateStr.split('-'); if (p.length === 3) visitDate = `${p[1]}/${p[2]}/${p[0].slice(-2)}`;
+        } else { visitDate = dateStr; }
       }
       html += `<div style="padding:12px;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.2s;"
         onclick="openModal('${b.id}');document.getElementById('visitedListOverlay').style.display='none';"

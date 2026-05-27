@@ -2,177 +2,550 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Canada Craft Brewery Atlas</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍺</text></svg>">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="styles.css?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0e0e0e;
+    --green: #5cb800;
+    --green-dark: #3d7d00;
+    --cream: #f5f2ec;
+    --muted: #888;
+    --border: #e2ddd5;
+    --card-bg: #fff;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--black);
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── COMPACT HERO ── */
+  .hero {
+    background: var(--black);
+    padding: 20px 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, #2a4a0022 0%, transparent 60%);
+  }
+  .hero-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: .12em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .hero-label span { font-size: 13px; }
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 11vw, 52px);
+    line-height: .95;
+    color: #fff;
+    letter-spacing: .01em;
+  }
+  .hero h1 em { color: var(--green); font-style: normal; }
+  .hero-sub {
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: #161616;
+    border-top: 1px solid #2a2a2a;
+  }
+  .stat {
+    padding: 8px 0;
+    text-align: center;
+    border-right: 1px solid #2a2a2a;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--green);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 8px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  /* ── STICKY CONTROLS ── */
+  .controls {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--cream);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+
+  /* Search */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .search-wrap input {
+    width: 100%;
+    height: 44px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    padding: 0 12px 0 38px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--black);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-wrap input:focus { border-color: var(--green); }
+  .search-wrap input::placeholder { color: #bbb; }
+
+  /* Selects row */
+  .selects-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  select {
+    height: 38px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    padding: 0 30px 0 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--black);
+    appearance: none;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* View toggle + count */
+  .view-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .toggle {
+    display: flex;
+    background: #e8e3da;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .toggle button {
+    height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    color: var(--muted);
+    transition: all .15s;
+  }
+  .toggle button.active {
+    background: var(--black);
+    color: #fff;
+  }
+  .count {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .count strong { color: var(--black); }
+
+  /* Filters — horizontal scroll */
+  .filters-scroll {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    justify-content: start;
+    gap: 6px;
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    height: 32px;
+    padding: 0 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--black);
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all .15s;
+  }
+  .chip.active {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  /* ── CARD LIST ── */
+  .list {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .brewery-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    padding: 14px;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .brewery-card:active { transform: scale(.985); box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .card-location {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .state-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #d04040;
+    flex-shrink: 0;
+  }
+  .card-badges {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 45%;
+  }
+  .badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #f0f0ec;
+    color: #555;
+    white-space: nowrap;
+  }
+  .badge.green { background: #eef7e0; color: var(--green-dark); }
+
+  .card-name {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 2px;
+    letter-spacing: -.01em;
+  }
+  .card-city {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .card-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--black);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0 calc(10px + var(--safe-bottom));
+    border-top: 1px solid #2a2a2a;
+    z-index: 20;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: #666;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0 20px;
+    transition: color .15s;
+  }
+  .nav-item.active { color: var(--green); }
+  .nav-item.active .jeep-icon { filter: none; }
+  .nav-item svg { width: 22px; height: 22px; }
+
+  /* spacer for bottom nav */
+  .bottom-spacer { height: 80px; }
+</style>
 </head>
 <body>
 
-<!-- ── HEADER ──────────────────────────── -->
-<header>
-  <div class="header-inner">
-    <div class="eyebrow">🍁 Thelma's Trail Guide</div>
-    <h1>Canada <em>Craft</em><br>Brewery Atlas</h1>
-    <p class="tagline">Every independent craft brewery · Every province · One searchable map</p>
-    <div class="stats">
-      <div class="stat">
-        <span class="stat-num" id="statTotal">—</span>
-        <span class="stat-label">Breweries</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num" id="statProvinces">10</span>
-        <span class="stat-label">Provinces/States</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num" id="statShowing">—</span>
-        <span class="stat-label">Showing</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num" id="statVisited" style="color:#78BE20">0</span>
-        <span class="stat-label">Visited</span>
-      </div>
-    </div>
-  </div>
-</header>
-
-<!-- ── JEEP STRIP ─────────────────────── -->
-<div class="jeep-strip">
-  <img src="data:image/png;base64,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" style="height:48px;width:48px;vertical-align:middle;display:inline-block;border-radius:50%">
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-label"><span>🍁</span> Thelma's Trail Guide</div>
+  <h1>Canada <em>Craft</em><br>Brewery Atlas</h1>
+  <p class="hero-sub">Every independent brewery · Every province</p>
 </div>
 
-<!-- ── CONTROLS ─────────────────────────── -->
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">2450</div>
+    <div class="stat-label">Breweries</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">10</div>
+    <div class="stat-label">Provinces</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">34</div>
+    <div class="stat-label">Showing</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">0</div>
+    <div class="stat-label">Visited</div>
+  </div>
+</div>
+
+<!-- STICKY CONTROLS -->
 <div class="controls">
   <div class="search-wrap">
-    <input type="search" id="searchInput" placeholder="Search brewery name, city, style…" oninput="filterBreweries()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    <input type="search" placeholder="Brewery, city, style…">
   </div>
-  <select id="provinceFilter" onchange="filterBreweries()">
-    <option value="">🍁 + 🇺🇸 All</option>
-    <optgroup label="── Canada ──">
-      <option value="AB">Alberta</option>
-      <option value="BC">British Columbia</option>
-      <option value="MB">Manitoba</option>
-      <option value="NB">New Brunswick</option>
-      <option value="NL">Newfoundland &amp; Labrador</option>
-      <option value="NS">Nova Scotia</option>
-      <option value="ON">Ontario</option>
-      <option value="PE">Prince Edward Island</option>
-      <option value="QC">Québec</option>
-      <option value="SK">Saskatchewan</option>
-    </optgroup>
-    <optgroup label="── United States ──">
-      <option value="AL">Alabama</option>
-      <option value="FL">Florida</option>
-      <option value="GA">Georgia</option>
-      <option value="KY">Kentucky</option>
-      <option value="NY">New York</option>
-      <option value="NC">North Carolina</option>
-      <option value="OH">Ohio</option>
-      <option value="PA">Pennsylvania</option>
-      <option value="SC">South Carolina</option>
-      <option value="TN">Tennessee</option>
-      <option value="VA">Virginia</option>
-      <option value="WV">West Virginia</option>
-    </optgroup>
-  </select>
-  <select id="typeFilter" onchange="filterBreweries()">
-    <option value="">All Types</option>
-    <option value="micro">Micro</option>
-    <option value="brewpub">Brewpub</option>
-    <option value="nano">Nano</option>
-    <option value="regional">Regional</option>
-  </select>
-  <div class="view-toggle">
-    <button class="view-btn active" id="btnGrid" onclick="setView('grid')">⊞ Cards</button>
-    <button class="view-btn" id="btnMap" onclick="setView('map')">📍 Map</button>
+
+  <div class="selects-row">
+    <select>
+      <option>Alabama</option>
+      <option>British Columbia</option>
+      <option>Ontario</option>
+      <option>Quebec</option>
+    </select>
+    <select>
+      <option>All Types</option>
+      <option>Taproom</option>
+      <option>Brewpub</option>
+      <option>Production</option>
+    </select>
   </div>
-  <div class="result-count">Showing <span id="countDisplay">—</span> breweries</div>
-</div>
 
-<!-- ── ROUTE PLANNER ─────────────────────── -->
-<div class="route-planner" id="routePlanner">
-  <span class="route-label">🚙 Route</span>
-  <input class="route-input" id="routeFrom" placeholder="From (e.g. St. Catharines, ON)">
-  <span class="route-arrow">→</span>
-  <input class="route-input" id="routeTo" placeholder="To (e.g. Nashville, TN)">
-  <button class="route-btn" onclick="planRoute()">Find Breweries</button>
-  <button class="route-btn clear" id="routeClearBtn" onclick="clearRoute()" style="display:none">✕ Clear</button>
-  <span class="route-status" id="routeStatus"></span>
-
-</div>
-
-<!-- ── FEATURE FILTERS ──────────────────── -->
-<div class="feature-filters">
-  <span class="filter-label">Filter by:</span>
-  <button class="feat-btn" data-feat="taproom"    onclick="toggleFeat(this)">🍺 Taproom</button>
-  <button class="feat-btn" data-feat="patio"      onclick="toggleFeat(this)">☀️ Patio</button>
-  <button class="feat-btn" data-feat="kitchen"    onclick="toggleFeat(this)">🍔 Kitchen</button>
-  <button class="feat-btn" data-feat="pet"        onclick="toggleFeat(this)">🐾 Pet Friendly</button>
-  <button class="feat-btn" data-feat="tours"      onclick="toggleFeat(this)">🗺️ Tours</button>
-  <button class="feat-btn" data-feat="accessible" onclick="toggleFeat(this)">♿ Accessible</button>
-  <button class="feat-btn" data-feat="ocb"        onclick="toggleFeat(this)">✓ OCB / Guild Member</button>
-  <button class="feat-btn" data-feat="visited"    onclick="toggleFeat(this)" style="border-color:var(--gecko);color:var(--gecko2)">🚙 Visited</button>
-</div>
-
-<!-- ── GRID ─────────────────────────────── -->
-<div class="grid-wrap" id="gridWrap">
-  <div class="grid" id="breweryGrid"></div>
-</div>
-
-<!-- ── MAP VIEW ──────────────────────────── -->
-<div id="mapView"></div>
-
-<!-- ── MODAL ─────────────────────────────── -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal" id="modal"></div>
-</div>
-
-<!-- ── TRAIL DASHBOARD ───────────────────── -->
-<div class="dashboard" id="dashboard">
-  <div class="dashboard-inner">
-    <div class="dashboard-heading">
-      🚙 Thelma's Trail Stats
-      <button onclick="showVisitedList()" style="float:right;background:#78BE20;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-size:14px;">📋 View Visited List</button>
+  <div class="view-row">
+    <div class="toggle">
+      <button class="active">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2h14v3H1zm0 4.5h14v3H1zm0 4.5h14v3H1z" opacity=".7"/></svg>
+        Cards
+      </button>
+      <button>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        Map
+      </button>
     </div>
-    <div class="dashboard-grid">
-      <div class="dash-stat">
-        <div><span class="dash-stat-num" id="dashVisited">0</span></div>
-        <div class="dash-stat-label">Breweries Visited</div>
-      </div>
-      <div class="dash-stat">
-        <div><span class="dash-stat-num" id="dashKm">0</span><span class="dash-stat-unit">km</span></div>
-        <div class="dash-stat-label">Trail Distance</div>
-      </div>
-      <div class="dash-stat">
-        <div><span class="dash-stat-num" id="dashProvinces">0</span></div>
-        <div class="dash-stat-label">Provinces/States Explored</div>
-      </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="chip" id="visited-btn" style="height:32px;font-size:13px;display:flex;align-items:center;gap:6px;">
+        <img src="/mnt/user-data/uploads/1000006490.jpg" style="width:20px;height:16px;object-fit:contain;"> Visited
+      </button>
+      <span class="count">Showing <strong>34</strong></span>
     </div>
   </div>
-</div>
 
-<!-- ── VISITED LIST MODAL ───────────────────── -->
-<div class="modal-overlay" id="visitedListOverlay" onclick="closeVisitedList(event)">
-  <div class="modal" id="visitedListModal" onclick="event.stopPropagation()" style="max-width:800px;max-height:90vh;overflow-y:auto;">
-    <div style="position:sticky;top:0;background:white;padding:20px;border-bottom:2px solid #eee;z-index:1;">
-      <h2 style="margin:0;color:#78BE20;">🚙 Breweries You've Visited</h2>
-      <button onclick="closeVisitedList()" style="position:absolute;top:20px;right:20px;background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
-    </div>
-    <div id="visitedListContent" style="padding:20px;"></div>
+  <div class="filters-scroll">
+    <button class="chip active">🍺 Taproom</button>
+    <button class="chip">☀️ Patio</button>
+    <button class="chip">🍔 Kitchen</button>
+    <button class="chip">🐾 Pet Friendly</button>
+    <button class="chip">🚌 Tours</button>
+    <button class="chip">♿ Accessible</button>
+    <button class="chip">✓ Guild Member</button>
+
   </div>
 </div>
 
-<footer>
-  <p>Canada Craft Brewery Atlas · Data sourced from OCB, CCBA, BreweryFinder.ca, Open Brewery DB · <a href="#">Submit a Brewery</a> · <a href="#">Claim Your Listing</a></p>
-</footer>
+<!-- CARD LIST -->
+<div class="list">
 
+  <div class="brewery-card">
+    <div class="card-top">
+      <div class="card-location"><div class="state-dot"></div>AL · Alabama</div>
+      <div class="card-badges">
+        <span class="badge green">Taproom</span>
+        <span class="badge">Patio</span>
+      </div>
+    </div>
+    <div class="card-name">5 Rivers Brewing LLC</div>
+    <div class="card-city">Spanish Fort</div>
+    <div class="card-tags">
+      <span class="tag">☀️ Patio</span>
+      <span class="tag">🐾 Pet Friendly</span>
+    </div>
+  </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="config.js?v=3"></script>
-<script src="data.js?v=3"></script>
-<script src="sync.js?v=3"></script>
-<script src="ui.js?v=3"></script>
-<script src="main.js?v=3"></script>
+  <div class="brewery-card">
+    <div class="card-top">
+      <div class="card-location"><div class="state-dot"></div>AL · Alabama</div>
+      <div class="card-badges">
+        <span class="badge green">Taproom</span>
+        <span class="badge">Kitchen</span>
+      </div>
+    </div>
+    <div class="card-name">Avondale Brewing Co.</div>
+    <div class="card-city">Birmingham</div>
+    <div class="card-tags">
+      <span class="tag">🍔 Kitchen</span>
+      <span class="tag">🚌 Tours</span>
+    </div>
+  </div>
+
+  <div class="brewery-card">
+    <div class="card-top">
+      <div class="card-location"><div class="state-dot"></div>AL · Alabama</div>
+      <div class="card-badges">
+        <span class="badge">Production</span>
+      </div>
+    </div>
+    <div class="card-name">Back Forty Beer Company</div>
+    <div class="card-city">Gadsden</div>
+    <div class="card-tags">
+      <span class="tag">♿ Accessible</span>
+      <span class="tag">✓ Guild</span>
+    </div>
+  </div>
+
+  <div class="brewery-card">
+    <div class="card-top">
+      <div class="card-location"><div class="state-dot"></div>AL · Alabama</div>
+      <div class="card-badges">
+        <span class="badge green">Taproom</span>
+        <span class="badge">Patio</span>
+        <span class="badge">Kitchen</span>
+      </div>
+    </div>
+    <div class="card-name">Cahaba Brewing Company</div>
+    <div class="card-city">Birmingham</div>
+    <div class="card-tags">
+      <span class="tag">☀️ Patio</span>
+      <span class="tag">🍔 Kitchen</span>
+      <span class="tag">🚌 Tours</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-spacer"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Browse
+  </button>
+  <button class="nav-item">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    Map
+  </button>
+  <button class="nav-item">
+    <img src="/mnt/user-data/uploads/1000006490.jpg" style="width:28px;height:22px;object-fit:contain;filter:grayscale(1) brightness(1.5);" class="jeep-icon">
+    Visited
+  </button>
+  <button class="nav-item">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    Search
+  </button>
+</nav>
+
+<script>
+  // Filter chip toggle
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('active'));
+  });
+
+  // View toggle
+  document.querySelectorAll('.toggle button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.toggle button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+
+  // Nav toggle
+  document.querySelectorAll('.nav-item').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+</script>
 </body>
 </html>

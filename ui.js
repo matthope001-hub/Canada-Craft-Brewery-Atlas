@@ -53,9 +53,12 @@ function updateDashboard() {
     totalKm += haversine(visited[i-1].lat, visited[i-1].lng, visited[i].lat, visited[i].lng);
   }
   const provinces = new Set(visited.map(b => b.province).filter(Boolean));
-  document.getElementById('dashVisited').textContent = visited.length;
-  document.getElementById('dashKm').textContent = Math.round(totalKm).toLocaleString();
-  document.getElementById('dashProvinces').textContent = provinces.size;
+  const dv = document.getElementById('dashVisited');
+  const dk = document.getElementById('dashKm');
+  const dp = document.getElementById('dashProvinces');
+  if (dv) dv.textContent = visited.length;
+  if (dk) dk.textContent = Math.round(totalKm).toLocaleString();
+  if (dp) dp.textContent = provinces.size;
 }
 
 function haversine(lat1, lng1, lat2, lng2) {

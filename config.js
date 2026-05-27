@@ -2,7 +2,7 @@
 // CONFIG.JS - Configuration & Constants
 // ═══════════════════════════════════════════════════════
 const SHEET_ID = '1071nhgKo4kStR5KkikpWEq8LKKDnMqE7FOhp3wZv9dw';
-const API_URL = 'https://script.google.com/macros/s/AKfycbxzjP9f2u9vZcATrlDgsx4QyIwBF_nfL6tZmYkx-j_SsSVoAAxtP3iwkn5bp16DVFpjtA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwrgzLaGWHShxmPhNE1UB1TYjwN6IW4eWSFD7bpOm1-ERGP8HH8phoswJuWj5pFwUtWlw/exec';
 const USE_CLOUD_SYNC = true;
 const PROV_COLORS = {
   ON:'#E8672A', BC:'#2A7BE8', AB:'#D4A017', QC:'#C4392F',

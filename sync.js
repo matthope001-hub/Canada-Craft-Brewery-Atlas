@@ -35,12 +35,20 @@ async function toggleVisited(id, event) {
   }
 }
 
-async function syncVisitedToCloud(breweryName, visited) {
+async function syncVisitedToCloud(brewery, visited) {
   try {
     await fetch(API_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brewery: breweryName, visited })
+      body: JSON.stringify({
+        brewery: brewery.name,
+        visited,
+        province: brewery.province,
+        city: brewery.city,
+        lat: brewery.lat,
+        lng: brewery.lng,
+        id: brewery.id
+      })
     });
     updateSyncStatus(visited ? 'marked-cloud' : 'unmarked-cloud');
   } catch {

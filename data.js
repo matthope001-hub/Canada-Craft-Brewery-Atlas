@@ -15,6 +15,19 @@ function parseBool(v) {
   return s === 'true' || s === 'yes' || s === '1';
 }
 
+// North American provinces/territories + US states allow-list.
+// Anything outside this set (Ireland, Scotland, Korea, Finland, etc.)
+// is dropped at load time so it doesn't appear in counts, filters, or map.
+const CA_CODES = ['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT'];
+const US_CODES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN',
+  'IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH',
+  'NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT',
+  'VT','VA','WA','WV','WI','WY'
+];
+const NA_CODES = new Set([...CA_CODES, ...US_CODES]);
+function isNorthAmerican(code) { return NA_CODES.has(code); }
+
 // Fallback if config.js's normalizeProvince isn't loaded (shouldn't happen,
 // but keeps data.js safe to load on its own).
 const _normProv = typeof normalizeProvince === 'function'
@@ -74,10 +87,11 @@ async function init() {
       };
     });
 
-    // ── PERMISSIVE filter: only exclude explicitly 'closed' rows ──
+    // ── Filter: drop closed rows, blank names, AND non-North-American ──
     allBreweries = rows.filter(b =>
       b.name && b.name.trim() !== '' &&
-      b.status.toLowerCase() !== 'closed'
+      b.status.toLowerCase() !== 'closed' &&
+      isNorthAmerican(b.province)
     );
     allBreweries.forEach(b => { if (b.visited) visitedSet.add(b.id); });
     console.log(`✅ Loaded ${allBreweries.length} Canadian breweries`);
@@ -150,7 +164,8 @@ async function loadUSBreweries() {
 
     const usBreweries = rows.filter(b =>
       b.name && b.name.trim() !== '' &&
-      b.status.toLowerCase() !== 'closed'
+      b.status.toLowerCase() !== 'closed' &&
+      isNorthAmerican(b.province)
     );
 
     if (usBreweries.length > 0) {
@@ -172,9 +187,10 @@ async function loadUSBreweries() {
   const cached = getCachedUS();
   if (cached) {
     console.log(`📦 US cache hit — ${cached.length} breweries`);
-    // Normalize cached entries too, in case they were saved before the fix
+    // Normalize cached entries and drop any international leftovers
     cached.forEach(b => { b.province = _normProv(b.province); });
-    allBreweries = [...allBreweries, ...cached];
+    const cleanCached = cached.filter(b => isNorthAmerican(b.province));
+    allBreweries = [...allBreweries, ...cleanCached];
     updateStats();
     render();
     if (currentView === 'map') renderMap();

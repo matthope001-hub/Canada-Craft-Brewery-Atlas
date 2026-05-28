@@ -15,6 +15,12 @@ function parseBool(v) {
   return s === 'true' || s === 'yes' || s === '1';
 }
 
+// Fallback if config.js's normalizeProvince isn't loaded (shouldn't happen,
+// but keeps data.js safe to load on its own).
+const _normProv = typeof normalizeProvince === 'function'
+  ? normalizeProvince
+  : (v => (v ? String(v).trim().toUpperCase() : ''));
+
 async function init() {
   // ── STEP 1: Load Canadian breweries from Sheet ──────
   try {
@@ -34,7 +40,7 @@ async function init() {
         id: obj.id || `can_${Math.random().toString(36).substr(2, 9)}`,
         name: obj.brewery_name || obj.name || '',
         legal_name: obj.legal_name || '',
-        province: obj.province || '',
+        province: _normProv(obj.province),
         city: obj.city || '',
         region: obj.region || obj.city || '',
         type: obj.type || 'micro',
@@ -111,7 +117,7 @@ async function loadUSBreweries() {
         id: obj.id || `us_${Math.random().toString(36).substr(2, 9)}`,
         name: obj.brewery_name || obj.name || '',
         legal_name: obj.legal_name || '',
-        province: obj.province || '',
+        province: _normProv(obj.province),
         city: obj.city || '',
         region: obj.region || obj.city || '',
         type: obj.type || 'micro',
@@ -166,6 +172,8 @@ async function loadUSBreweries() {
   const cached = getCachedUS();
   if (cached) {
     console.log(`📦 US cache hit — ${cached.length} breweries`);
+    // Normalize cached entries too, in case they were saved before the fix
+    cached.forEach(b => { b.province = _normProv(b.province); });
     allBreweries = [...allBreweries, ...cached];
     updateStats();
     render();
@@ -184,7 +192,7 @@ async function loadUSBreweries() {
           .then(r => r.json()).catch(() => [])
       ));
       return results.flat().map(b => ({
-        id: 'us_' + b.id, name: b.name, province: code,
+        id: 'us_' + b.id, name: b.name, province: _normProv(code),
         city: b.city, region: b.state, type: b.brewery_type,
         lat: parseFloat(b.latitude) || 0, lng: parseFloat(b.longitude) || 0,
         address: b.street || '', postal: b.postal_code || '',
@@ -251,6 +259,7 @@ async function loadOverpassBreweries() {
   const cachedOSM = getCachedOSM();
   if (cachedOSM) {
     console.log(`📦 OSM cache hit — ${cachedOSM.length} breweries`);
+    cachedOSM.forEach(b => { b.province = _normProv(b.province); });
     allBreweries = [...allBreweries, ...cachedOSM];
     updateStats(); render(); updateDashboard();
     if (currentView === 'map') renderMap();
@@ -270,7 +279,7 @@ async function loadOverpassBreweries() {
           const lat = el.lat || (el.center && el.center.lat);
           const lng = el.lon || (el.center && el.center.lon);
           return {
-            id: 'osm_' + el.id, name: t.name || '', province: code,
+            id: 'osm_' + el.id, name: t.name || '', province: _normProv(code),
             city: t['addr:city'] || '', region: t['addr:city'] || '',
             type: 'micro', lat: parseFloat(lat)||0, lng: parseFloat(lng)||0,
             address: [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),

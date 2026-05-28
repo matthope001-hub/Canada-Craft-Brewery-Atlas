@@ -53,15 +53,37 @@
     };
   }
 
-  // ── 3. Optional: small "Viewing as guest" banner ────────
-  document.addEventListener('DOMContentLoaded', function () {
-    const badge = document.createElement('div');
-    badge.textContent = 'Read-only guest view';
-    badge.style.cssText =
-      'position:fixed;top:8px;right:8px;z-index:9999;' +
-      'background:rgba(120,190,32,.92);color:#1a1a18;' +
-      'font:600 11px/1 sans-serif;letter-spacing:.04em;' +
-      'padding:6px 10px;border-radius:14px;pointer-events:none;';
-    document.body.appendChild(badge);
-  });
+  // ── 3. Welcome banner under the hero (always visible) ───
+  function addWelcomeBanner() {
+    if (document.getElementById('guestBanner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'guestBanner';
+    banner.innerHTML =
+      '<span style="font-size:14px;">👋</span>' +
+      '<span><strong>Welcome, guest!</strong> ' +
+      'You\u2019re viewing Jeep &amp; Ginger Brew Atlas in read-only mode \u2014 ' +
+      'browse, search, and explore the map. Check-ins are disabled.</span>';
+    banner.style.cssText =
+      'display:flex;align-items:center;gap:10px;' +
+      'background:#EDF7D8;border-bottom:1px solid #C5E89A;' +
+      'color:#3a5a10;font:500 12px/1.4 "DM Sans",sans-serif;' +
+      'letter-spacing:.01em;padding:12px 16px;';
+
+    // Insert directly after the hero, before the stats bar
+    const hero = document.querySelector('.hero');
+    const statsBar = document.querySelector('.stats-bar');
+    if (statsBar) {
+      statsBar.parentNode.insertBefore(banner, statsBar);
+    } else if (hero) {
+      hero.parentNode.insertBefore(banner, hero.nextSibling);
+    } else {
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addWelcomeBanner);
+  } else {
+    addWelcomeBanner();
+  }
 })();

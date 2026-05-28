@@ -72,11 +72,19 @@ function render() {
   document.getElementById('countDisplay').textContent = filtered.length;
   document.getElementById('statShowing').textContent = filtered.length;
 
-  // Dynamic count of distinct provinces/states across ALL breweries
-  const provEl = document.getElementById('statProvinces');
-  if (provEl) {
-    const distinct = new Set(allBreweries.map(b => b.province).filter(Boolean));
-    provEl.textContent = distinct.size;
+  // Dynamic counts: Canadian provinces/territories vs US states/territories
+  const caEl = document.getElementById('statProvincesCA');
+  const usEl = document.getElementById('statStatesUS');
+  if (caEl || usEl) {
+    const caSet = new Set();
+    const usSet = new Set();
+    allBreweries.forEach(b => {
+      if (!b.province) return;
+      if (typeof CA_CODES !== 'undefined' && CA_CODES.includes(b.province)) caSet.add(b.province);
+      else if (typeof US_CODES !== 'undefined' && US_CODES.includes(b.province)) usSet.add(b.province);
+    });
+    if (caEl) caEl.textContent = caSet.size;
+    if (usEl) usEl.textContent = usSet.size;
   }
 
   // Also update the total-breweries stat if it exists

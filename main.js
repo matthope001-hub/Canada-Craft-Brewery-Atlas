@@ -67,13 +67,6 @@ function toggleFeat(btn) {
 // RENDER
 // ─────────────────────────────────────────────────────
 function render() {
-  // One-time province normalization so "NY" and "New York" don't count
-  // as two different states, "MIssouri" gets fixed, etc.
-  if (!window._provincesNormalized && typeof normalizeProvince === 'function') {
-    allBreweries.forEach(b => { b.province = normalizeProvince(b.province); });
-    window._provincesNormalized = true;
-  }
-
   const filtered = getFiltered();
   const grid = document.getElementById('breweryGrid');
   document.getElementById('countDisplay').textContent = filtered.length;

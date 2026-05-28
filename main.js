@@ -223,7 +223,7 @@ function openModal(id) {
       <a class="btn-directions" href="${mapsUrl}" target="_blank">📍 Get Directions</a>
       ${b.website ? `<a class="btn-web" href="${b.website}" target="_blank">Website ↗</a>` : ''}
       <button id="visitedBtn" class="btn-visited ${visitedSet.has(b.id) ? 'marked' : ''}" onclick="toggleVisited('${b.id}', event)">
-        ${visitedSet.has(b.id) ? '<img src="/jeep_icon.png" style="width:18px;height:14px;object-fit:contain;vertical-align:middle;margin-right:4px;">Visited!' : '<img src="/jeep_icon.png" style="width:18px;height:14px;object-fit:contain;vertical-align:middle;margin-right:4px;">Mark Visited'}
+        ${visitedSet.has(b.id) ? '<img src="/jeep_icon.png" style="width:20px;height:13px;object-fit:contain;vertical-align:middle;margin-right:4px;">Visited!' : '<img src="/jeep_icon.png" style="width:20px;height:13px;object-fit:contain;vertical-align:middle;margin-right:4px;">Mark Visited'}
       </button>
     </div>
     <div class="verified-row">

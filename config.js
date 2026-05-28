@@ -26,6 +26,48 @@ const US_STATES = {
 const US_CACHE_KEY = 'usBreweriesCache';
 const US_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
+// ── PROVINCE / STATE NORMALIZER ──────────────────────────
+// The sheet has mixed formats: "NY" and "New York" both appear,
+// "California" has no code, "MIssouri" has a typo, etc.
+// This maps every variant to a single canonical 2-letter code so
+// stats, filters, milestones, and the map all see one ON, one NY, etc.
+const PROVINCE_NAME_TO_CODE = {
+  // Canadian provinces & territories
+  'alberta':'AB','british columbia':'BC','manitoba':'MB',
+  'new brunswick':'NB','newfoundland':'NL','newfoundland and labrador':'NL',
+  'newfoundland & labrador':'NL','nova scotia':'NS','ontario':'ON',
+  'prince edward island':'PE','quebec':'QC','québec':'QC',
+  'saskatchewan':'SK','yukon':'YT','northwest territories':'NT','nunavut':'NU',
+
+  // US states (all 50 + DC)
+  'alabama':'AL','alaska':'AK','arizona':'AZ','arkansas':'AR',
+  'california':'CA','colorado':'CO','connecticut':'CT','delaware':'DE',
+  'district of columbia':'DC','washington dc':'DC','washington d.c.':'DC',
+  'florida':'FL','georgia':'GA','hawaii':'HI','idaho':'ID','illinois':'IL',
+  'indiana':'IN','iowa':'IA','kansas':'KS','kentucky':'KY','louisiana':'LA',
+  'maine':'ME','maryland':'MD','massachusetts':'MA','michigan':'MI',
+  'minnesota':'MN','mississippi':'MS','missouri':'MO','montana':'MT',
+  'nebraska':'NE','nevada':'NV','new hampshire':'NH','new jersey':'NJ',
+  'new mexico':'NM','new york':'NY','north carolina':'NC','north dakota':'ND',
+  'ohio':'OH','oklahoma':'OK','oregon':'OR','pennsylvania':'PA',
+  'rhode island':'RI','south carolina':'SC','south dakota':'SD',
+  'tennessee':'TN','texas':'TX','utah':'UT','vermont':'VT','virginia':'VA',
+  'washington':'WA','west virginia':'WV','wisconsin':'WI','wyoming':'WY'
+};
+
+function normalizeProvince(raw) {
+  if (!raw) return '';
+  const trimmed = String(raw).trim();
+  if (!trimmed) return '';
+  const key = trimmed.toLowerCase();
+  // Full name → code
+  if (PROVINCE_NAME_TO_CODE[key]) return PROVINCE_NAME_TO_CODE[key];
+  // Already a 2-letter code → uppercase it
+  if (/^[a-z]{2}$/i.test(trimmed)) return trimmed.toUpperCase();
+  // International / unknown — return cleaned original (proper-case)
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+
 // ── SAMPLE DATA — shown if Sheet fails to load ──────────
 // Add a few real breweries here as a fallback so the app
 // never shows a blank screen.

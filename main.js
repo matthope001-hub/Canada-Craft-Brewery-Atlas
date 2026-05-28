@@ -245,63 +245,255 @@ function closeModal(e) {
 // toggleVisited is defined in sync.js — do not duplicate here
 
 // ─────────────────────────────────────────────────────
-// VISITED LIST
+// VISITED LIST + MILESTONES DASHBOARD
 // ─────────────────────────────────────────────────────
+
+// Thorold, ON as home base (general Niagara region, no exact address)
+const HOME = { lat: 43.1198, lng: -79.1993 };
+
+function parseVisitDate(raw) {
+  if (!raw) return null;
+  const s = String(raw);
+  if (s.startsWith('Date(')) {
+    const m = s.match(/Date\((\d+),(\d+),(\d+)\)/);
+    if (m) return new Date(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
+  }
+  if (s.includes('T')) { const d = new Date(s); return isNaN(d) ? null : d; }
+  if (s.includes('-')) { const d = new Date(s); return isNaN(d) ? null : d; }
+  return null;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  return `${String(d.getUTCMonth ? d.getMonth()+1 : d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getDate ? d.getDate() : d.getUTCDate()).padStart(2,'0')}/${String(d.getFullYear ? d.getFullYear() : d.getUTCFullYear()).slice(-2)}`;
+}
+
+function distFrom(b, origin) {
+  if (!b.lat || !b.lng) return null;
+  return haversine(origin.lat, origin.lng, b.lat, b.lng);
+}
+
+function buildMilestones(visited) {
+  const CANADIAN_PROVINCES = ['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT'];
+
+  // Sort by date for chronological milestones
+  const byDate = [...visited].filter(b => parseVisitDate(b.visit_date))
+    .sort((a,b) => parseVisitDate(a.visit_date) - parseVisitDate(b.visit_date));
+
+  const withCoords = visited.filter(b => b.lat && b.lng);
+  const distances  = withCoords.map(b => ({ b, km: distFrom(b, HOME) }));
+
+  const furthest  = distances.length ? distances.reduce((a,c) => c.km > a.km ? c : a) : null;
+  const closest   = distances.length ? distances.reduce((a,c) => c.km < a.km ? c : a) : null;
+  const northmost = withCoords.length ? withCoords.reduce((a,c) => c.lat > a.lat ? c : a) : null;
+  const southmost = withCoords.length ? withCoords.reduce((a,c) => c.lat < a.lat ? c : a) : null;
+  const eastmost  = withCoords.length ? withCoords.reduce((a,c) => c.lng > a.lng ? c : a) : null;
+  const westmost  = withCoords.length ? withCoords.reduce((a,c) => c.lng < a.lng ? c : a) : null;
+
+  const provinces = [...new Set(visited.map(b => b.province).filter(Boolean))];
+  const canadianProvsVisited = provinces.filter(p => CANADIAN_PROVINCES.includes(p));
+  const hasUS = visited.some(b => !CANADIAN_PROVINCES.includes(b.province));
+
+  const countMilestones = [
+    { count: 1,   emoji: '🏁', label: 'First Brewery' },
+    { count: 5,   emoji: '⭐', label: '5 Breweries' },
+    { count: 10,  emoji: '🔟', label: '10 Breweries' },
+    { count: 25,  emoji: '🥉', label: '25 Breweries' },
+    { count: 50,  emoji: '🥈', label: '50 Breweries' },
+    { count: 100, emoji: '🥇', label: '100 Breweries' },
+    { count: 200, emoji: '🏆', label: '200 Breweries' },
+    { count: 500, emoji: '🍺', label: '500 Breweries' },
+  ];
+
+  const provMilestones = [
+    { count: 1,  emoji: '🍁', label: 'First Canadian Province' },
+    { count: 3,  emoji: '🍁🍁', label: '3 Provinces' },
+    { count: 5,  emoji: '🍁🍁🍁', label: '5 Provinces' },
+    { count: 10, emoji: '🇨🇦', label: 'All 10 Provinces!' },
+  ];
+
+  let html = `<div style="margin-bottom:24px;">`;
+
+  // ── STATS ROW ──
+  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;">
+    <div style="background:#f5f2ec;border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:#78BE20;">${visited.length}</div>
+      <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.08em;">Breweries</div>
+    </div>
+    <div style="background:#f5f2ec;border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:#78BE20;">${canadianProvsVisited.length}</div>
+      <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.08em;">Provinces</div>
+    </div>
+    <div style="background:#f5f2ec;border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:#78BE20;">${furthest ? Math.round(furthest.km).toLocaleString() : '—'}</div>
+      <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.08em;">Max km</div>
+    </div>
+  </div>`;
+
+  // ── COUNT MILESTONES ──
+  html += `<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#aaa;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #eee;">Visit Count Milestones</div>`;
+  html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">`;
+  countMilestones.forEach(m => {
+    const earned = visited.length >= m.count;
+    const brew   = byDate[m.count - 1];
+    const detail = earned && brew ? ` — ${brew.name}${brew.city ? ', '+brew.city : ''}` : '';
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:${earned ? '#EDF7D8' : '#f9f9f9'};border:1px solid ${earned ? '#C5E89A' : '#eee'};">
+      <span style="font-size:20px;${earned ? '' : 'filter:grayscale(1);opacity:.4;'}">${m.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:${earned ? '#1a1a18' : '#aaa'};">${m.label}</div>
+        ${earned ? `<div style="font-size:11px;color:#5fa012;">${detail}</div>` : `<div style="font-size:11px;color:#ccc;">${m.count - visited.length} more to go</div>`}
+      </div>
+      ${earned ? '<span style="color:#78BE20;font-size:16px;">✓</span>' : ''}
+    </div>`;
+  });
+  html += `</div>`;
+
+  // ── PROVINCE MILESTONES ──
+  html += `<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#aaa;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #eee;">Province Milestones</div>`;
+  html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">`;
+  provMilestones.forEach(m => {
+    const earned = canadianProvsVisited.length >= m.count;
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:${earned ? '#EDF7D8' : '#f9f9f9'};border:1px solid ${earned ? '#C5E89A' : '#eee'};">
+      <span style="font-size:20px;${earned ? '' : 'filter:grayscale(1);opacity:.4;'}">${m.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:${earned ? '#1a1a18' : '#aaa'};">${m.label}</div>
+        ${earned ? `<div style="font-size:11px;color:#5fa012;">${canadianProvsVisited.length}/10 provinces visited</div>` : `<div style="font-size:11px;color:#ccc;">${m.count - canadianProvsVisited.length} more provinces to go</div>`}
+      </div>
+      ${earned ? '<span style="color:#78BE20;font-size:16px;">✓</span>' : ''}
+    </div>`;
+  });
+  // US milestone
+  html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:${hasUS ? '#EDF7D8' : '#f9f9f9'};border:1px solid ${hasUS ? '#C5E89A' : '#eee'};">
+    <span style="font-size:20px;${hasUS ? '' : 'filter:grayscale(1);opacity:.4;'}">🇺🇸</span>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:${hasUS ? '#1a1a18' : '#aaa'};">First US Brewery</div>
+      ${hasUS ? `<div style="font-size:11px;color:#5fa012;">${visited.filter(b=>!CANADIAN_PROVINCES.includes(b.province)).length} US breweries visited</div>` : `<div style="font-size:11px;color:#ccc;">Cross the border!</div>`}
+    </div>
+    ${hasUS ? '<span style="color:#78BE20;font-size:16px;">✓</span>' : ''}
+  </div>`;
+  html += `</div>`;
+
+  // ── GEOGRAPHIC RECORDS ──
+  html += `<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#aaa;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #eee;">Geographic Records</div>`;
+  html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">`;
+
+  const geoRecords = [
+    { emoji: '🗺️', label: 'Furthest from Home', b: furthest?.b, detail: furthest ? `${Math.round(furthest.km).toLocaleString()} km away` : null },
+    { emoji: '📍', label: 'Closest to Home',    b: closest?.b,  detail: closest  ? `${Math.round(closest.km).toLocaleString()} km away` : null },
+    { emoji: '⬆️', label: 'Northernmost',        b: northmost,   detail: northmost ? `${northmost.city}, ${northmost.province}` : null },
+    { emoji: '⬇️', label: 'Southernmost',        b: southmost,   detail: southmost ? `${southmost.city}, ${southmost.province}` : null },
+    { emoji: '➡️', label: 'Easternmost',         b: eastmost,    detail: eastmost  ? `${eastmost.city}, ${eastmost.province}` : null },
+    { emoji: '⬅️', label: 'Westernmost',         b: westmost,    detail: westmost  ? `${westmost.city}, ${westmost.province}` : null },
+  ];
+
+  geoRecords.forEach(r => {
+    const earned = !!r.b;
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:${earned ? '#EDF7D8' : '#f9f9f9'};border:1px solid ${earned ? '#C5E89A' : '#eee'};" ${earned ? `onclick="openModal('${r.b.id}');document.getElementById('visitedListOverlay').classList.remove('open');" style="cursor:pointer;"` : ''}>
+      <span style="font-size:20px;">${r.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:${earned ? '#1a1a18' : '#aaa'};">${r.label}</div>
+        ${earned ? `<div style="font-size:11px;color:#5fa012;">${r.b.name} — ${r.detail}</div>` : `<div style="font-size:11px;color:#ccc;">Visit more breweries to unlock</div>`}
+      </div>
+      ${earned ? '<span style="color:#78BE20;font-size:12px;">↗</span>' : ''}
+    </div>`;
+  });
+  html += `</div>`;
+
+  // ── FIRST BREWERY ──
+  if (byDate.length) {
+    const first = byDate[0];
+    html += `<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#aaa;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #eee;">Hall of Fame</div>`;
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:#EDF7D8;border:1px solid #C5E89A;cursor:pointer;" onclick="openModal('${first.id}');document.getElementById('visitedListOverlay').classList.remove('open');">
+      <span style="font-size:20px;">🏁</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:#1a1a18;">First Brewery Ever Visited</div>
+        <div style="font-size:11px;color:#5fa012;">${first.name} — ${first.city}, ${first.province} · ${fmtDate(parseVisitDate(first.visit_date))}</div>
+      </div>
+      <span style="color:#78BE20;font-size:12px;">↗</span>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
 function showVisitedList() {
-  const visited = allBreweries.filter(b => visitedSet.has(b.id)).sort((a, b) => {
+  const visited = allBreweries.filter(b => visitedSet.has(b.id));
+  const byProvince = [...visited].sort((a, b) => {
     if (a.province !== b.province) return a.province.localeCompare(b.province);
     return a.name.localeCompare(b.name);
   });
   const provinceNames = {
-    'ON': 'Ontario', 'BC': 'British Columbia', 'AB': 'Alberta', 'QC': 'Quebec',
-    'MB': 'Manitoba', 'SK': 'Saskatchewan', 'NS': 'Nova Scotia', 'NB': 'New Brunswick',
-    'PE': 'Prince Edward Island', 'NL': 'Newfoundland & Labrador',
-    'AL': 'Alabama', 'NY': 'New York', 'PA': 'Pennsylvania', 'OH': 'Ohio',
-    'KY': 'Kentucky', 'TN': 'Tennessee', 'WV': 'West Virginia', 'VA': 'Virginia',
-    'NC': 'North Carolina', 'SC': 'South Carolina', 'GA': 'Georgia', 'FL': 'Florida'
+    'ON':'Ontario','BC':'British Columbia','AB':'Alberta','QC':'Quebec',
+    'MB':'Manitoba','SK':'Saskatchewan','NS':'Nova Scotia','NB':'New Brunswick',
+    'PE':'Prince Edward Island','NL':'Newfoundland & Labrador',
+    'AL':'Alabama','FL':'Florida','GA':'Georgia','KY':'Kentucky',
+    'NC':'North Carolina','NY':'New York','OH':'Ohio','PA':'Pennsylvania',
+    'SC':'South Carolina','TN':'Tennessee','VA':'Virginia','WV':'West Virginia'
   };
+
   if (!visited.length) {
-    document.getElementById('visitedListContent').innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No visited breweries yet.</p>';
+    document.getElementById('visitedListContent').innerHTML = `
+      <div style="text-align:center;padding:40px;color:#999;">
+        <div style="font-size:48px;margin-bottom:12px;">🍺</div>
+        <p>No visited breweries yet.<br>Start checking in!</p>
+      </div>`;
   } else {
-    let html = '', currentProvince = '';
-    visited.forEach(b => {
+    // ── TABS ──
+    let html = `
+      <div style="display:flex;gap:4px;background:#f0ede8;border-radius:8px;padding:3px;margin-bottom:20px;">
+        <button onclick="switchVisitedTab('milestones')" id="tabMilestones" style="flex:1;padding:8px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#1a1a18;color:#fff;">🏆 Milestones</button>
+        <button onclick="switchVisitedTab('list')" id="tabList" style="flex:1;padding:8px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:#888;">📋 All Visits (${visited.length})</button>
+      </div>
+      <div id="visitedTabMilestones">${buildMilestones(visited)}</div>
+      <div id="visitedTabList" style="display:none;">`;
+
+    let currentProvince = '';
+    byProvince.forEach(b => {
       if (b.province !== currentProvince) {
         if (currentProvince !== '') html += '</div>';
         currentProvince = b.province;
-        html += `<div style="margin-bottom:30px;"><h3 style="color:#78BE20;border-bottom:2px solid #78BE20;padding-bottom:8px;margin-bottom:16px;">${provinceNames[currentProvince] || currentProvince}</h3>`;
+        html += `<div style="margin-bottom:24px;"><h3 style="color:#78BE20;border-bottom:2px solid #78BE20;padding-bottom:8px;margin-bottom:12px;">${provinceNames[currentProvince] || currentProvince}</h3>`;
       }
       let visitDate = '';
       if (b.visit_date) {
-        const dateStr = String(b.visit_date);
-        if (dateStr.startsWith('Date(')) {
-          const match = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
-          if (match) visitDate = `${String(parseInt(match[2]) + 1).padStart(2, '0')}/${String(match[3]).padStart(2, '0')}/${match[1].slice(-2)}`;
-        } else if (dateStr.includes('T')) {
-          const d = new Date(dateStr);
-          if (!isNaN(d)) visitDate = `${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCFullYear()).slice(-2)}`;
-        } else if (dateStr.includes('-')) {
-          const p = dateStr.split('-'); if (p.length === 3) visitDate = `${p[1]}/${p[2]}/${p[0].slice(-2)}`;
-        } else { visitDate = dateStr; }
+        const d = parseVisitDate(b.visit_date);
+        if (d) visitDate = fmtDate(d);
       }
-      html += `<div style="padding:12px;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.2s;"
-        onclick="openModal('${b.id}');document.getElementById('visitedListOverlay').style.display='none';"
+      html += `<div style="padding:12px;border-bottom:1px solid #eee;cursor:pointer;transition:background .15s;"
+        onclick="openModal('${b.id}');document.getElementById('visitedListOverlay').classList.remove('open');"
         onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
-        <div style="font-weight:600;color:#333;margin-bottom:4px;">${b.name}</div>
-        <div style="font-size:14px;color:#666;">${b.city}${visitDate ? ` • Visited: ${visitDate}` : ''}</div>
+        <div style="font-weight:600;color:#333;margin-bottom:2px;">${b.name}</div>
+        <div style="font-size:12px;color:#888;">${b.city}${visitDate ? ` · ${visitDate}` : ''}</div>
       </div>`;
     });
-    html += '</div>';
-    html += `<div style="margin-top:30px;padding-top:20px;border-top:2px solid #eee;text-align:center;color:#999;"><strong>${visited.length}</strong> ${visited.length === 1 ? 'brewery' : 'breweries'} visited</div>`;
+    html += `</div><div style="margin-top:24px;padding-top:16px;border-top:2px solid #eee;text-align:center;color:#999;font-size:13px;"><strong>${visited.length}</strong> ${visited.length === 1 ? 'brewery' : 'breweries'} visited</div></div>`;
+
     document.getElementById('visitedListContent').innerHTML = html;
   }
   const overlay = document.getElementById('visitedListOverlay');
-  if (overlay) { overlay.classList.add('open'); }
+  if (overlay) overlay.classList.add('open');
+}
+
+function switchVisitedTab(tab) {
+  const milestones = document.getElementById('visitedTabMilestones');
+  const list       = document.getElementById('visitedTabList');
+  const tabM       = document.getElementById('tabMilestones');
+  const tabL       = document.getElementById('tabList');
+  if (tab === 'milestones') {
+    milestones.style.display = ''; list.style.display = 'none';
+    tabM.style.background = '#1a1a18'; tabM.style.color = '#fff';
+    tabL.style.background = 'transparent'; tabL.style.color = '#888';
+  } else {
+    milestones.style.display = 'none'; list.style.display = '';
+    tabL.style.background = '#1a1a18'; tabL.style.color = '#fff';
+    tabM.style.background = 'transparent'; tabM.style.color = '#888';
+  }
 }
 
 function closeVisitedList(event) {
-  if (!event || event.target.id === 'visitedListOverlay' || event.target.tagName === 'BUTTON') {
-    const overlay = document.getElementById('visitedListOverlay');
-    overlay.classList.remove('open');
+  if (!event || event.target.id === 'visitedListOverlay') {
+    document.getElementById('visitedListOverlay').classList.remove('open');
   }
 }
 

@@ -72,6 +72,17 @@ function render() {
   document.getElementById('countDisplay').textContent = filtered.length;
   document.getElementById('statShowing').textContent = filtered.length;
 
+  // Dynamic count of distinct provinces/states across ALL breweries
+  const provEl = document.getElementById('statProvinces');
+  if (provEl) {
+    const distinct = new Set(allBreweries.map(b => b.province).filter(Boolean));
+    provEl.textContent = distinct.size;
+  }
+
+  // Also update the total-breweries stat if it exists
+  const totalEl = document.getElementById('statTotal');
+  if (totalEl) totalEl.textContent = allBreweries.length;
+
   if (!filtered.length) {
     grid.innerHTML = `<div class="empty"><div class="empty-icon">🍺</div><h3>No Breweries Found</h3><p>Try adjusting your search or filters.</p></div>`;
     return;

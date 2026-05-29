@@ -50,6 +50,14 @@
       letter-spacing: .06em; text-transform: uppercase;
     }
 
+    /* ── GUEST BANNER ── */
+    .guest-banner {
+      background: #EDF7D8; border-bottom: 1px solid #C5E89A;
+      padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+      font-size: 12px; color: #3a5a10; line-height: 1.4;
+    }
+    .guest-banner img { flex-shrink: 0; }
+
     /* ── STATS BAR ── */
     .stats-bar {
       display: grid; grid-template-columns: repeat(5, 1fr);
@@ -418,6 +426,12 @@
   <p class="hero-sub">Every independent brewery · Every province · One searchable map</p>
 </div>
 
+<!-- ── GUEST BANNER ── -->
+<div class="guest-banner">
+  <img src="/jeep_icon.png" style="width:24px;height:18px;object-fit:contain;">
+  <span><strong>Welcome, guest!</strong> You're viewing Jeep &amp; Ginger Brew Atlas in read-only mode — browse, search, and explore the map. Check-ins are disabled.</span>
+</div>
+
 <!-- ── STATS BAR ── -->
 <div class="stats-bar">
   <div class="stat">
@@ -425,11 +439,11 @@
     <div class="stat-label">Breweries</div>
   </div>
   <div class="stat">
-    <div class="stat-num" id="statProvincesCA">—</div>
+    <div class="stat-num" id="statProvinces">—</div>
     <div class="stat-label">Provinces/Territories</div>
   </div>
   <div class="stat">
-    <div class="stat-num" id="statStatesUS">—</div>
+    <div class="stat-num" id="statUS">—</div>
     <div class="stat-label">US States/Districts</div>
   </div>
   <div class="stat">
@@ -444,7 +458,6 @@
 
 <!-- ── STICKY CONTROLS ── -->
 <div class="controls">
-  <!-- Search -->
   <div class="search-wrap">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -452,7 +465,6 @@
     <input type="search" id="searchInput" placeholder="Brewery, city, style…" oninput="filterBreweries()">
   </div>
 
-  <!-- Province + Type dropdowns -->
   <div class="selects-row">
     <select id="provinceFilter" onchange="filterBreweries()">
       <option value="">All Provinces/States</option>
@@ -467,7 +479,6 @@
     </select>
   </div>
 
-  <!-- View toggle + count -->
   <div class="view-row">
     <div class="toggle">
       <button id="btnGrid" class="active" onclick="setView('grid')">
@@ -491,7 +502,6 @@
     </div>
   </div>
 
-  <!-- Feature filters -->
   <div class="feature-filters">
     <button class="feat-btn" data-feat="taproom"    onclick="toggleFeat(this)">🍺 Taproom</button>
     <button class="feat-btn" data-feat="patio"      onclick="toggleFeat(this)">☀️ Patio</button>
@@ -503,7 +513,7 @@
   </div>
 </div>
 
-<!-- ── ROUTE PLANNER (shows when map is active) ── -->
+<!-- ── ROUTE PLANNER ── -->
 <div class="route-bar" id="routePlanner">
   <input type="text" id="routeFrom" placeholder="From (city or address)">
   <input type="text" id="routeTo" placeholder="To (city or address)">
@@ -532,7 +542,7 @@
 <!-- ── FOOTER ── -->
 <footer>
   <a href="https://www.instagram.com/jeep_and_ginger/" target="_blank">@jeep_and_ginger</a>
-  &nbsp;·&nbsp; Jeep & Ginger Brew Atlas &nbsp;·&nbsp;
+  &nbsp;·&nbsp; Jeep &amp; Ginger Brew Atlas &nbsp;·&nbsp;
   <a href="mailto:hello@jeepandginger.ca">hello@jeepandginger.ca</a>
 </footer>
 

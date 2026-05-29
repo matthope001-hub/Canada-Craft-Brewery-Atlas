@@ -71,16 +71,27 @@ function populateProvinceDropdown() {
 }
 
 function updateStats() {
+  const CANADIAN_PROVS = new Set(['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT']);
   const total = allBreweries.length;
   const filtered = getFiltered().length;
   const visited = allBreweries.filter(b => visitedSet.has(b.id)).length;
 
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statShowing').textContent = filtered;
-  document.getElementById('statVisited').textContent = visited;
-  document.getElementById('countDisplay').textContent = filtered;
+  const provCodes = new Set(allBreweries.map(b => String(b.province || '').trim().toUpperCase()).filter(Boolean));
+  const canadaCount = [...provCodes].filter(p => CANADIAN_PROVS.has(p)).length;
+  const usCount     = [...provCodes].filter(p => !CANADIAN_PROVS.has(p) && p.length === 2).length;
 
-  populateProvinceDropdown(); // ← FIXES DROPDOWN
+  document.getElementById('statTotal').textContent    = total.toLocaleString();
+  document.getElementById('statShowing').textContent  = filtered.toLocaleString();
+  document.getElementById('statVisited').textContent  = visited;
+
+  const elProv = document.getElementById('statProvinces');
+  const elUS   = document.getElementById('statUS');
+  if (elProv) elProv.textContent = canadaCount;
+  if (elUS)   elUS.textContent   = usCount;
+
+  document.getElementById('countDisplay').textContent = filtered.toLocaleString();
+
+  populateProvinceDropdown();
 }
 
 function updateVisitedStat() {

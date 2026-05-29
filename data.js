@@ -15,25 +15,6 @@ function parseBool(v) {
   return s === 'true' || s === 'yes' || s === '1';
 }
 
-// North American provinces/territories + US states allow-list.
-// Anything outside this set (Ireland, Scotland, Korea, Finland, etc.)
-// is dropped at load time so it doesn't appear in counts, filters, or map.
-const CA_CODES = ['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT'];
-const US_CODES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN',
-  'IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH',
-  'NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT',
-  'VT','VA','WA','WV','WI','WY'
-];
-const NA_CODES = new Set([...CA_CODES, ...US_CODES]);
-function isNorthAmerican(code) { return NA_CODES.has(code); }
-
-// Fallback if config.js's normalizeProvince isn't loaded (shouldn't happen,
-// but keeps data.js safe to load on its own).
-const _normProv = typeof normalizeProvince === 'function'
-  ? normalizeProvince
-  : (v => (v ? String(v).trim().toUpperCase() : ''));
-
 async function init() {
   // ── STEP 1: Load Canadian breweries from Sheet ──────
   try {
@@ -53,7 +34,7 @@ async function init() {
         id: obj.id || `can_${Math.random().toString(36).substr(2, 9)}`,
         name: obj.brewery_name || obj.name || '',
         legal_name: obj.legal_name || '',
-        province: _normProv(obj.province),
+        province: obj.province || '',
         city: obj.city || '',
         region: obj.region || obj.city || '',
         type: obj.type || 'micro',
@@ -87,11 +68,10 @@ async function init() {
       };
     });
 
-    // ── Filter: drop closed rows, blank names, AND non-North-American ──
+    // ── PERMISSIVE filter: only exclude explicitly 'closed' rows ──
     allBreweries = rows.filter(b =>
       b.name && b.name.trim() !== '' &&
-      b.status.toLowerCase() !== 'closed' &&
-      isNorthAmerican(b.province)
+      b.status.toLowerCase() !== 'closed'
     );
     allBreweries.forEach(b => { if (b.visited) visitedSet.add(b.id); });
     console.log(`✅ Loaded ${allBreweries.length} Canadian breweries`);
@@ -131,7 +111,7 @@ async function loadUSBreweries() {
         id: obj.id || `us_${Math.random().toString(36).substr(2, 9)}`,
         name: obj.brewery_name || obj.name || '',
         legal_name: obj.legal_name || '',
-        province: _normProv(obj.province),
+        province: obj.province || '',
         city: obj.city || '',
         region: obj.region || obj.city || '',
         type: obj.type || 'micro',
@@ -164,8 +144,7 @@ async function loadUSBreweries() {
 
     const usBreweries = rows.filter(b =>
       b.name && b.name.trim() !== '' &&
-      b.status.toLowerCase() !== 'closed' &&
-      isNorthAmerican(b.province)
+      b.status.toLowerCase() !== 'closed'
     );
 
     if (usBreweries.length > 0) {
@@ -176,6 +155,10 @@ async function loadUSBreweries() {
       render();
       updateDashboard();
       if (currentView === 'map') renderMap();
+      // Sheet has comprehensive US data — skip OBD cache and OSM to avoid duplicates
+      localStorage.removeItem('usBreweriesCache');
+      localStorage.removeItem('osmBreweriesCache');
+      return;
     } else {
       console.log('⚠️ US_Breweries sheet is empty — loading from API');
     }
@@ -187,10 +170,7 @@ async function loadUSBreweries() {
   const cached = getCachedUS();
   if (cached) {
     console.log(`📦 US cache hit — ${cached.length} breweries`);
-    // Normalize cached entries and drop any international leftovers
-    cached.forEach(b => { b.province = _normProv(b.province); });
-    const cleanCached = cached.filter(b => isNorthAmerican(b.province));
-    allBreweries = [...allBreweries, ...cleanCached];
+    allBreweries = [...allBreweries, ...cached];
     updateStats();
     render();
     if (currentView === 'map') renderMap();
@@ -208,7 +188,7 @@ async function loadUSBreweries() {
           .then(r => r.json()).catch(() => [])
       ));
       return results.flat().map(b => ({
-        id: 'us_' + b.id, name: b.name, province: _normProv(code),
+        id: 'us_' + b.id, name: b.name, province: code,
         city: b.city, region: b.state, type: b.brewery_type,
         lat: parseFloat(b.latitude) || 0, lng: parseFloat(b.longitude) || 0,
         address: b.street || '', postal: b.postal_code || '',
@@ -275,7 +255,6 @@ async function loadOverpassBreweries() {
   const cachedOSM = getCachedOSM();
   if (cachedOSM) {
     console.log(`📦 OSM cache hit — ${cachedOSM.length} breweries`);
-    cachedOSM.forEach(b => { b.province = _normProv(b.province); });
     allBreweries = [...allBreweries, ...cachedOSM];
     updateStats(); render(); updateDashboard();
     if (currentView === 'map') renderMap();
@@ -295,7 +274,7 @@ async function loadOverpassBreweries() {
           const lat = el.lat || (el.center && el.center.lat);
           const lng = el.lon || (el.center && el.center.lon);
           return {
-            id: 'osm_' + el.id, name: t.name || '', province: _normProv(code),
+            id: 'osm_' + el.id, name: t.name || '', province: code,
             city: t['addr:city'] || '', region: t['addr:city'] || '',
             type: 'micro', lat: parseFloat(lat)||0, lng: parseFloat(lng)||0,
             address: [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),

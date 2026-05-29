@@ -72,22 +72,50 @@ function populateProvinceDropdown() {
 
 function updateStats() {
   const CANADIAN_PROVS = new Set(['AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT']);
-  const total = allBreweries.length;
+  const US_STATE_NAMES = new Set([
+    'alabama','alaska','arizona','arkansas','california','colorado','connecticut',
+    'delaware','florida','georgia','hawaii','idaho','illinois','indiana','iowa',
+    'kansas','kentucky','louisiana','maine','maryland','massachusetts','michigan',
+    'minnesota','mississippi','missouri','montana','nebraska','nevada',
+    'new hampshire','new jersey','new mexico','new york','north carolina',
+    'north dakota','ohio','oklahoma','oregon','pennsylvania','rhode island',
+    'south carolina','south dakota','tennessee','texas','utah','vermont',
+    'virginia','washington','west virginia','wisconsin','wyoming',
+    'district of columbia','washington d.c.'
+  ]);
+  const US_STATE_CODES = new Set([
+    'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN',
+    'IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV',
+    'NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN',
+    'TX','UT','VT','VA','WA','WV','WI','WY','DC'
+  ]);
+
+  const total    = allBreweries.length;
   const filtered = getFiltered().length;
-  const visited = allBreweries.filter(b => visitedSet.has(b.id)).length;
+  const visited  = allBreweries.filter(b => visitedSet.has(b.id)).length;
 
-  const provCodes = new Set(allBreweries.map(b => String(b.province || '').trim().toUpperCase()).filter(Boolean));
-  const canadaCount = [...provCodes].filter(p => CANADIAN_PROVS.has(p)).length;
-  const usCount     = [...provCodes].filter(p => !CANADIAN_PROVS.has(p) && p.length === 2).length;
+  const canadaProvs = new Set();
+  const usStates    = new Set();
 
-  document.getElementById('statTotal').textContent    = total.toLocaleString();
-  document.getElementById('statShowing').textContent  = filtered.toLocaleString();
-  document.getElementById('statVisited').textContent  = visited;
+  allBreweries.forEach(b => {
+    const raw  = String(b.province || '').trim();
+    const code = raw.toUpperCase();
+    const name = raw.toLowerCase();
+    if (CANADIAN_PROVS.has(code)) {
+      canadaProvs.add(code);
+    } else if (US_STATE_CODES.has(code) || US_STATE_NAMES.has(name)) {
+      usStates.add(code);
+    }
+  });
+
+  document.getElementById('statTotal').textContent   = total.toLocaleString();
+  document.getElementById('statShowing').textContent = filtered.toLocaleString();
+  document.getElementById('statVisited').textContent = visited;
 
   const elProv = document.getElementById('statProvinces');
   const elUS   = document.getElementById('statUS');
-  if (elProv) elProv.textContent = canadaCount;
-  if (elUS)   elUS.textContent   = usCount;
+  if (elProv) elProv.textContent = canadaProvs.size;
+  if (elUS)   elUS.textContent   = usStates.size;
 
   document.getElementById('countDisplay').textContent = filtered.toLocaleString();
 
